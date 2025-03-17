@@ -69,6 +69,8 @@ pip install -e nc2pt/
 
 That's it!
 
+Note: We are currently investigating removing xESMF dependency from this project due to restrictiveness of the conda environment see [issue #15](https://github.com/climagination/nc2pt/issues/15#issue-2921181147) for more info -17/3/2025.
+
 ### 📋 Configuration
 nc2pt uses [hydra](https://hydra.cc/) for configuring and by instantiating structured classes in `nc2pt/climatedata.py`. This simeultaneously defines the workflow as well as the data. Please see `nc2pt/conf/config.yml` for an example configuration, or below:
 
