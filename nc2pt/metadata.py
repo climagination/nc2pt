@@ -36,6 +36,11 @@ def configure_metadata(
     logging.info("✨ Homogenizing dataset keys...")
 
     dim_coord_attrs = {"coords": climdata.coords, "dims": climdata.dims}
+
+    if "forecast_initial_time" in ds.dims and "forecast_hour" in ds.dims:
+        # Flatten 2D time coordinates found in ERA5 PR nc files
+        ds = flatten_2D_forecast_time(ds=ds)
+
     for ds_attr, dim_or_coord in dim_coord_attrs.items():
         ds = loop_over_keys_and_rename(ds, dim_or_coord, ds_attr)
 
@@ -131,4 +136,27 @@ def match_longitudes(ds: xr.Dataset) -> xr.Dataset:
             "which is the intention of this function. Check longitude units."
         )
     ds = ds.assign_coords(lon=(ds.lon + 360))
+    return ds
+
+
+def flatten_2D_forecast_time(ds: xr.Dataset) -> xr.Dataset:
+    """Flatten forecast_initial_time and forecast_hour into a
+      single time coordinate (seems to be structure of ERA5 PR data).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset containing 'forecast_initial_time' and 'forecast_hour'.
+
+    Returns
+    -------
+    ds : xarray.Dataset
+        Dataset with stacked 'time' dimension based on valid forecast time.
+    """
+    init, hour = xr.broadcast(ds.forecast_initial_time, ds.forecast_hour)
+    valid_time = init + hour.astype("timedelta64[ns]")
+    ds = ds.stack(time=("forecast_initial_time", "forecast_hour"))
+    ds = ds.drop_vars(["time", "forecast_initial_time", "forecast_hour"])
+    ds = ds.assign_coords(time=("time", valid_time.values.ravel()))
+    ds = ds.assign_coords(time=("time", valid_time.values.ravel()))
     return ds
