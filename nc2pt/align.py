@@ -3,7 +3,6 @@ from typing import Dict
 
 import pandas as pd
 import xarray as xr
-import xesmf as xe
 
 from nc2pt.climatedata import ClimateData
 import omegaconf
@@ -167,8 +166,15 @@ def interpolate(ds: xr.Dataset, grid: xr.Dataset) -> xr.Dataset:
         raise ValueError("lat not in grid dims, check grid")
 
     # Check that the dataset has the correct variables
-    regridder = xe.Regridder(ds, grid, "bilinear")
-    ds = regridder(ds)
+    interp_points = xr.Dataset({
+        "lat": grid.lat,
+        "lon": grid.lon,
+    })
+    ds = ds.interp(
+        latitude=interp_points["lat"],
+        longitude=interp_points["lon"] + 360,
+        method="linear"
+    )
     return ds
 
 
