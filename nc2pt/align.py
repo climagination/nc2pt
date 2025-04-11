@@ -171,8 +171,8 @@ def interpolate(ds: xr.Dataset, grid: xr.Dataset) -> xr.Dataset:
         "lon": grid.lon,
     })
     ds = ds.interp(
-        latitude=interp_points["lat"],
-        longitude=interp_points["lon"] + 360,
+        lat=interp_points["lat"],
+        lon=interp_points["lon"],
         method="linear"
     )
     return ds

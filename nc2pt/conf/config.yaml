@@ -154,6 +154,10 @@ dims: # Defines the dimensions of the dataset and lists them to be initialized a
 
 coords:
   - _target_: nc2pt.climatedata.ClimateDimension
+    name: time
+    alternative_names: ["forecast_initial_time", "Time", "Times", "times"]
+    chunksize: 100
+  - _target_: nc2pt.climatedata.ClimateDimension
     name: lat
     alternative_names: ["latitude", "Lat", "Latitude"]
     chunksize: 100
@@ -169,14 +173,14 @@ select:
     # this defines the full dataset from which to subset
     range:
       start: "20001001T06:00:00"
-      end: "20040928T12:00:00"
+      end: "20150928T12:00:00"
       # start: "2021-11-01T00:00:00"
       # end: "2021-12-31T22:00:00"
 
     # use this to select which years to reserve for testing
     # and for validation
     # the remaining years in full will be used for training
-    test_years: [2000]
+    test_years: [2000,2003,2004]
     validation_years: [2001]
     # test_years: [None]
     # validation_years: [None]

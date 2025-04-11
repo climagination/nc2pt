@@ -43,6 +43,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         # Instantiates climate_variable object in cliamtedata.py
         climate_variable = instantiate(climate_variable)
         chunk_dims = {dim.name: dim.chunksize for dim in climdata.dims}
+        chunk_coords = {coord.name: coord.chunksize for coord in climdata.coords}
         ds = load_grid(climate_variable.path, engine=climdata.compute.engine)
 
         start = timer()
@@ -51,7 +52,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         )
 
         ds = configure_metadata_fn(ds, climate_variable)
-        ds = ds.chunk(chunk_dims)
+        ds = ds.chunk(chunk_coords)
         ds = (
             slice_time(
                 ds, climdata.select.time.range.start, climdata.select.time.range.end
