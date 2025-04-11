@@ -27,11 +27,11 @@ jobs:
       - run: which python
       - name: Install
         run: |
-          conda install -c conda-forge xesmf
+        #  conda install -c conda-forge xesmf
           conda install -c conda-forge pip
       - name: Set ESMFMKFILE and install reqs
         run: |
-          export ESMFMKFILE=/usr/share/miniconda/envs/__setup_conda/lib/esmf.mk
+        #  export ESMFMKFILE=/usr/share/miniconda/envs/__setup_conda/lib/esmf.mk
           pip install -r requirements.txt
           pip install -e .
       - name: Lint with flake8
@@ -44,13 +44,15 @@ jobs:
       - name: Test with pytest
         run: |
           conda install pytest
-          export ESMFMKFILE=/usr/share/miniconda/envs/__setup_conda/lib/esmf.mk
           pytest nc2pt/tests/
+        #  export ESMFMKFILE=/usr/share/miniconda/envs/__setup_conda/lib/esmf.mk
+          
       - name: Generate coverage reports
         run: |
           conda install pytest-cov
-          export ESMFMKFILE=/usr/share/miniconda/envs/__setup_conda/lib/esmf.mk
           pytest --cov-config=.coveragerc --cov=nc2pt --cov-report=xml nc2pt/tests/
+        #  export ESMFMKFILE=/usr/share/miniconda/envs/__setup_conda/lib/esmf.mk
+          
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
