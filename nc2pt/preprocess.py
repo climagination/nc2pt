@@ -51,6 +51,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         )
 
         ds = configure_metadata_fn(ds, climate_variable)
+        ds = ds.chunk(chunk_dims)
         ds = (
             slice_time(
                 ds, climdata.select.time.range.start, climdata.select.time.range.end
