@@ -12,7 +12,7 @@
 # _target_ is loaded as a dataclass in climatedata.py with some inheritance.
 
 _target_: nc2pt.climatedata.ClimateData # Iniatlizes ClimateData dataclass object
-output_path: /home/sbeairsto/data/data-sbeairsto
+output_path: /path/to/my/data/folder
 climate_models:
   - _target_: nc2pt.climatedata.ClimateModel
     name: hr
