@@ -76,7 +76,7 @@ climate_models:
       _target_: nc2pt.climatedata.ClimateVariable
       name: "hr_ref"
       alternative_names: ["T2"]
-      path: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
+      path: /home/my_username/nc2pt/nc2pt/data/hr_ref.nc
       is_west_negative: true
       invariant: true
 
