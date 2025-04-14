@@ -52,7 +52,13 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         )
 
         ds = configure_metadata_fn(ds, climate_variable)
-        ds = ds.chunk(chunk_coords)
+        if 'rlat' in ds.dims:
+            ds = ds.chunk(chunk_dims)
+        elif 'lat' in ds.dims:
+            ds = ds.chunk(chunk_coords)
+        else:
+            raise ValueError("Dataset must have either 'lat' or 'rlat' in its dimensions.")
+
         ds = (
             slice_time(
                 ds, climdata.select.time.range.start, climdata.select.time.range.end
