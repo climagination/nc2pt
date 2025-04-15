@@ -69,9 +69,9 @@ def loop_over_sets(climate_data, model, s):
             train_ds = xr.open_zarr(train_file)
             train_attrs = train_ds[var.name].attrs
             # now write the attributes to a yaml file
-            train_attrs_file = (
-                f"{climate_data.output_path}/{s}/{var.name}_{s}_{model.name}_attrs.yaml"
-            )
+            train_dir = f"{climate_data.output_path}/{s}"
+            os.makedirs(train_dir, exist_ok=True)
+            train_attrs_file = f"{train_dir}/{var.name}_{s}_{model.name}_attrs.yaml"
             with open(train_attrs_file, "w") as file:
                 file.write("attributes:\n")
                 for key, value in train_attrs.items():
