@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import logging
 from typing import Optional, List, Union
+import xarray as xr
 
 
 @dataclass
@@ -46,3 +47,27 @@ class ClimateData:
     select: dict
     compute: dict
     loader: dict
+
+    def apply_chunks(self, ds: xr.Dataset) -> xr.Dataset:
+        """
+        Apply dimension-aware chunking to an xarray Dataset using the ClimateDimension specs.
+
+        Only includes dimensions that exist in the dataset. Falls back to alternative names.
+        """
+        chunk_dict = {}
+
+        for dim in self.dims:
+            # Check if dim.name or any alternative name is present in the dataset
+            matched_name = next(
+                (name for name in [dim.name] + dim.alternative_names if name in ds.dims),
+                None
+            )
+            if matched_name is not None:
+                chunk_dict[matched_name] = dim.chunksize
+
+        if chunk_dict:
+            logging.info(f"Applying chunks: {chunk_dict}")
+            return ds.chunk(chunk_dict)
+        else:
+            logging.warning("No matching dimensions found for chunking.")
+            return ds

@@ -42,7 +42,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
     for climate_variable in model.climate_variables:
         # Instantiates climate_variable object in cliamtedata.py
         climate_variable = instantiate(climate_variable)
-        chunk_dims = {dim.name: dim.chunksize for dim in climdata.dims}
+
         ds = load_grid(climate_variable.path, engine=climdata.compute.engine)
 
         start = timer()
@@ -51,6 +51,8 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         )
 
         ds = configure_metadata_fn(ds, climate_variable)
+        ds = climdata.apply_chunks(ds)
+
         ds = (
             slice_time(
                 ds, climdata.select.time.range.start, climdata.select.time.range.end
@@ -83,14 +85,14 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
             for train_test_validation in train_test_validation_ds:
                 logging.info(f"✨ Writing {train_test_validation} output...")
                 write_to_zarr(
-                    train_test_validation_ds[train_test_validation].chunk(chunk_dims),
+                    climdata.apply_chunks(train_test_validation_ds[train_test_validation]),
                     f"{climdata.output_path}/{climate_variable.name}_{train_test_validation}_{model.name}",
                 )
 
         else:
             logging.info("✨ Writing output...")
             write_to_zarr(
-                ds.chunk(chunk_dims),
+                climdata.apply_chunks(ds),
                 f"{climdata.output_path}/{climate_variable.name}_{model.name}",
             )
 
