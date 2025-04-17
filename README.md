@@ -208,3 +208,12 @@ loader:
 Testing is done with pytest. The easiest way to perform tests is to install pytest and use the command: `pytest --cov-report term-missing --cov=nc2pt .`
 
 It will generate a coverage report and automatically use files prepended with `test_*.py` in `nc2pt/tests`
+
+
+### 📝 Notes
+
+- **Chunking Sensitivity**:  
+  The preprocessing pipeline is sensitive to how datasets are chunked in memory. If you encounter memory errors or Dask worker crashes, reviewing and adjusting the chunk sizes is a good first step. See [closed issue #18](https://github.com/nannau/nc2pt/issues/18) for details and suggestions.
+
+- **Interpolation Method**:  
+  The current interpolation method uses xarray’s native 2D interpolation, which does not account for Earth curvature. This repository previously used an `xESMF`-backed interpolation scheme that performed regridding on spherical geometry. However, within the scope of this work, it was found that the difference in performance was negligible, so the dependency on `xESMF` was removed. See [closed issue #15](https://github.com/nannau/nc2pt/issues/15) for more context.
