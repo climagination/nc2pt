@@ -3,6 +3,7 @@ import logging
 from datetime import timedelta
 from timeit import default_timer as timer
 from functools import partial
+from pathlib import Path
 
 import xarray as xr
 import torch
@@ -69,9 +70,10 @@ def loop_over_sets(climate_data, model, s):
             train_ds = xr.open_zarr(train_file)
             train_attrs = train_ds[var.name].attrs
             # now write the attributes to a yaml file
-            train_attrs_file = (
-                f"{climate_data.output_path}/{s}/{var.name}_{s}_{model.name}_attrs.yaml"
-            )
+            train_dir = Path(f"{climate_data.output_path}/{s}")
+            train_dir.mkdir(parents=True, exist_ok=True)
+
+            train_attrs_file = train_dir / f"{var.name}_{s}_{model.name}_attrs.yaml"
             with open(train_attrs_file, "w") as file:
                 file.write("attributes:\n")
                 for key, value in train_attrs.items():
