@@ -76,22 +76,23 @@ nc2pt uses [hydra](https://hydra.cc/) for configuring and by instantiating struc
 
 ```yaml
 _target_: nc2pt.climatedata.ClimateData # Iniatlizes ClimateData dataclass object
-output_path: /home/nannau/data/proc/
+output_path: /home/sbeairsto/data-sbeairsto/test_data
 climate_models:
-  # This lists the models 
   - _target_: nc2pt.climatedata.ClimateModel
     name: hr
     info: "High Resolution USask WRF, Western Canada"
     climate_variables: # Provides a list of ClimateVariable dataclass objects to initialize
-        - _target_: nc2pt.climatedata.ClimateVariable
-        name: "tas"
-        alternative_names: ["T2", "surface temperature"]
-        path: /home/nannau/USask-WRF-WCA/fire_vars/T2/*.nc
-        is_west_negative: true
-        apply_standardize: false
-        apply_normalize: true
-        invariant: false
-        transform: []
+
+       - _target_: nc2pt.climatedata.ClimateVariable
+         name: "uas"
+         alternative_names: ["U10", "u10", "uas"]
+         path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
+         is_west_negative: true
+         apply_standardize: false
+         apply_normalize: true
+         invariant: false
+         transform: []
+  
 
   - _target_: nc2pt.climatedata.ClimateModel
     info: "Low resolution ERA5, Western Canada"
@@ -100,23 +101,23 @@ climate_models:
       _target_: nc2pt.climatedata.ClimateVariable
       name: "hr_ref"
       alternative_names: ["T2"]
-      path: nc2pt/nc2pt/data/hr_ref.nc
+      path: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
       is_west_negative: true
+      invariant: true
 
     climate_variables:
-        - _target_: nc2pt.climatedata.ClimateVariable
-        name: "tas"
-        alternative_names: ["T2", "surface temperature"]
-        path: /home/nannau/ERA5_NCAR-RDA_North_America/proc/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123_time_sliced_cropped.nc
-        is_west_negative: false
-        apply_standardize: false
-        apply_normalize: true
-        invariant: false
-        transform:
-          - "x - 273.15"
+       - _target_: nc2pt.climatedata.ClimateVariable
+         name: "uas"
+         alternative_names: ["U10", "u10", "uas"]
+         path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+         is_west_negative: false
+         apply_standardize: false
+         apply_normalize: true
+         invariant: false
+         transform: []
 
 
-dims: # Defines the dimensions you might find in your lr or hr dataset and lists them to be initialized as ClimateDimension objects. Typically this would match what is in your hr dataset. Intended to allow for renaming of dimensions and allows for the control of chunking
+dims: # Defines the dimensions of the dataset and lists them to be initialized as ClimateDimension objects
   - _target_: nc2pt.climatedata.ClimateDimension
     name: time
     alternative_names: ["forecast_initial_time", "Time", "Times", "times"]
@@ -132,7 +133,6 @@ dims: # Defines the dimensions you might find in your lr or hr dataset and lists
     hr_only: true
     chunksize: -1
 
-# similar to dims, just as coodinates instead. coordinates might not match dims on curvilinear grids
 coords:
   - _target_: nc2pt.climatedata.ClimateDimension
     name: lat
@@ -143,8 +143,6 @@ coords:
     alternative_names: ["longitude", "Long", "Lon", "Longitude"]
     chunksize: -1
 
-# subsample data temporally or spatially!
-
 select:
   # Time indexing for subsets
   time:
@@ -153,16 +151,12 @@ select:
     range:
       start: "20001001T06:00:00"
       end: "20150928T12:00:00"
-      # start: "2021-11-01T00:00:00"
-      # end: "2021-12-31T22:00:00"
 
     # use this to select which years to reserve for testing
     # and for validation
     # the remaining years in full will be used for training
     test_years: [2000, 2009, 2014]
     validation_years: [2015]
-    # test_years: [None]
-    # validation_years: [None]
 
   # sets the scale factor and index slices of the rotated coordinates
   spatial:
@@ -182,16 +176,15 @@ compute:
   engine: h5netcdf
   dask_dashboard_address: 8787
   chunks:
-    time: auto
-    rlat: auto
-    rlon: auto
+    time: 100
+    rlat: -1
+    rlon: -1
 
-# optional for tools scripts (single_files_to_batches)
+# for tools scripts
 loader:
   batch_size: 4
   randomize: true
   seed: 0
-
 ```
 
 ### 🚀 Running
