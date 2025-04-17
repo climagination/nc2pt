@@ -46,52 +46,62 @@ The most obvious downside is that you lose the metadata associated with a netCDF
 
 
 ## Requirements
-* [Miniconda](https://docs.conda.io/en/latest/miniconda.html) with Python >= 3.8
-* [xESMF](https://xesmf.readthedocs.io/en/latest/)
 
+- Python >= 3.8
+- Recommended: virtual environment (e.g. `venv` or `virtualenv`)
 
+## 💽 Installation
 
-### 💽 Installation
-xESMF is only available through Conda, so you will have to be able to install conda on your system. Unfortunately, this is limiting because certain HPCs don't allow conda.
+1. Clone this repository:
 
-1. Begin by install xESMF here in a conda environment: [xESMF](https://xesmf.readthedocs.io/en/latest/)
+   ```bash
+   git clone https://github.com/climagination/nc2pt.git
+   cd nc2pt
+   ```
 
-2. Clone this repository
+2. (Optional but recommended) Create and activate a virtual environment:
 
-3. Install into your conda environment
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
 
-```bash
-conda install -c conda-forge pip
-pip install -r requirements.txt
-# editable install
-pip install -e nc2pt/
-```
+3. Install dependencies:
 
-That's it!
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Note: We are currently investigating removing xESMF dependency from this project due to restrictiveness of the conda environment see [issue #15](https://github.com/climagination/nc2pt/issues/15#issue-2921181147) for more info -17/3/2025.
+4. Install the package in editable mode:
+
+   ```bash
+   pip install -e nc2pt/
+   ```
+
+That’s it!
 
 ### 📋 Configuration
 nc2pt uses [hydra](https://hydra.cc/) for configuring and by instantiating structured classes in `nc2pt/climatedata.py`. This simeultaneously defines the workflow as well as the data. Please see `nc2pt/conf/config.yml` for an example configuration, or below:
 
 ```yaml
 _target_: nc2pt.climatedata.ClimateData # Iniatlizes ClimateData dataclass object
-output_path: /home/nannau/data/proc/
+output_path: /home/sbeairsto/data-sbeairsto/test_data
 climate_models:
-  # This lists the models 
   - _target_: nc2pt.climatedata.ClimateModel
     name: hr
     info: "High Resolution USask WRF, Western Canada"
     climate_variables: # Provides a list of ClimateVariable dataclass objects to initialize
-        - _target_: nc2pt.climatedata.ClimateVariable
-        name: "tas"
-        alternative_names: ["T2", "surface temperature"]
-        path: /home/nannau/USask-WRF-WCA/fire_vars/T2/*.nc
-        is_west_negative: true
-        apply_standardize: false
-        apply_normalize: true
-        invariant: false
-        transform: []
+
+       - _target_: nc2pt.climatedata.ClimateVariable
+         name: "uas"
+         alternative_names: ["U10", "u10", "uas"]
+         path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
+         is_west_negative: true
+         apply_standardize: false
+         apply_normalize: true
+         invariant: false
+         transform: []
+  
 
   - _target_: nc2pt.climatedata.ClimateModel
     info: "Low resolution ERA5, Western Canada"
@@ -100,23 +110,23 @@ climate_models:
       _target_: nc2pt.climatedata.ClimateVariable
       name: "hr_ref"
       alternative_names: ["T2"]
-      path: nc2pt/nc2pt/data/hr_ref.nc
+      path: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
       is_west_negative: true
+      invariant: true
 
     climate_variables:
-        - _target_: nc2pt.climatedata.ClimateVariable
-        name: "tas"
-        alternative_names: ["T2", "surface temperature"]
-        path: /home/nannau/ERA5_NCAR-RDA_North_America/proc/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123_time_sliced_cropped.nc
-        is_west_negative: false
-        apply_standardize: false
-        apply_normalize: true
-        invariant: false
-        transform:
-          - "x - 273.15"
+       - _target_: nc2pt.climatedata.ClimateVariable
+         name: "uas"
+         alternative_names: ["U10", "u10", "uas"]
+         path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+         is_west_negative: false
+         apply_standardize: false
+         apply_normalize: true
+         invariant: false
+         transform: []
 
 
-dims: # Defines the dimensions you might find in your lr or hr dataset and lists them to be initialized as ClimateDimension objects. Typically this would match what is in your hr dataset. Intended to allow for renaming of dimensions and allows for the control of chunking
+dims: # Defines the dimensions of the dataset and lists them to be initialized as ClimateDimension objects
   - _target_: nc2pt.climatedata.ClimateDimension
     name: time
     alternative_names: ["forecast_initial_time", "Time", "Times", "times"]
@@ -132,7 +142,6 @@ dims: # Defines the dimensions you might find in your lr or hr dataset and lists
     hr_only: true
     chunksize: -1
 
-# similar to dims, just as coodinates instead. coordinates might not match dims on curvilinear grids
 coords:
   - _target_: nc2pt.climatedata.ClimateDimension
     name: lat
@@ -143,8 +152,6 @@ coords:
     alternative_names: ["longitude", "Long", "Lon", "Longitude"]
     chunksize: -1
 
-# subsample data temporally or spatially!
-
 select:
   # Time indexing for subsets
   time:
@@ -153,16 +160,12 @@ select:
     range:
       start: "20001001T06:00:00"
       end: "20150928T12:00:00"
-      # start: "2021-11-01T00:00:00"
-      # end: "2021-12-31T22:00:00"
 
     # use this to select which years to reserve for testing
     # and for validation
     # the remaining years in full will be used for training
     test_years: [2000, 2009, 2014]
     validation_years: [2015]
-    # test_years: [None]
-    # validation_years: [None]
 
   # sets the scale factor and index slices of the rotated coordinates
   spatial:
@@ -182,16 +185,15 @@ compute:
   engine: h5netcdf
   dask_dashboard_address: 8787
   chunks:
-    time: auto
-    rlat: auto
-    rlon: auto
+    time: 100
+    rlat: -1
+    rlon: -1
 
-# optional for tools scripts (single_files_to_batches)
+# for tools scripts
 loader:
   batch_size: 4
   randomize: true
   seed: 0
-
 ```
 
 ### 🚀 Running
@@ -206,3 +208,12 @@ loader:
 Testing is done with pytest. The easiest way to perform tests is to install pytest and use the command: `pytest --cov-report term-missing --cov=nc2pt .`
 
 It will generate a coverage report and automatically use files prepended with `test_*.py` in `nc2pt/tests`
+
+
+### 📝 Notes
+
+- **Chunking Sensitivity**:  
+  The preprocessing pipeline is sensitive to how datasets are chunked in memory. If you encounter memory errors or Dask worker crashes, reviewing and adjusting the chunk sizes is a good first step. See [closed issue #18](https://github.com/nannau/nc2pt/issues/18) for details and suggestions.
+
+- **Interpolation Method**:  
+  The current interpolation method uses xarray’s native 2D interpolation, which does not account for Earth curvature. This repository previously used an `xESMF`-backed interpolation scheme that performed regridding on spherical geometry. However, within the scope of this work, it was found that the difference in performance was negligible, so the dependency on `xESMF` was removed. See [closed issue #15](https://github.com/nannau/nc2pt/issues/15) for more context.
