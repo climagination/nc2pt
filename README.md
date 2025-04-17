@@ -46,30 +46,39 @@ The most obvious downside is that you lose the metadata associated with a netCDF
 
 
 ## Requirements
-* [Miniconda](https://docs.conda.io/en/latest/miniconda.html) with Python >= 3.8
-* [xESMF](https://xesmf.readthedocs.io/en/latest/)
 
+- Python >= 3.8
+- Recommended: virtual environment (e.g. `venv` or `virtualenv`)
 
+## 💽 Installation
 
-### 💽 Installation
-xESMF is only available through Conda, so you will have to be able to install conda on your system. Unfortunately, this is limiting because certain HPCs don't allow conda.
+1. Clone this repository:
 
-1. Begin by install xESMF here in a conda environment: [xESMF](https://xesmf.readthedocs.io/en/latest/)
+   ```bash
+   git clone https://github.com/climagination/nc2pt.git
+   cd nc2pt
+   ```
 
-2. Clone this repository
+2. (Optional but recommended) Create and activate a virtual environment:
 
-3. Install into your conda environment
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
 
-```bash
-conda install -c conda-forge pip
-pip install -r requirements.txt
-# editable install
-pip install -e nc2pt/
-```
+3. Install dependencies:
 
-That's it!
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Note: We are currently investigating removing xESMF dependency from this project due to restrictiveness of the conda environment see [issue #15](https://github.com/climagination/nc2pt/issues/15#issue-2921181147) for more info -17/3/2025.
+4. Install the package in editable mode:
+
+   ```bash
+   pip install -e nc2pt/
+   ```
+
+That’s it!
 
 ### 📋 Configuration
 nc2pt uses [hydra](https://hydra.cc/) for configuring and by instantiating structured classes in `nc2pt/climatedata.py`. This simeultaneously defines the workflow as well as the data. Please see `nc2pt/conf/config.yml` for an example configuration, or below:
