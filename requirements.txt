@@ -4,4 +4,4 @@ netCDF4
 hydra-core==1.3.2
 h5netcdf
 torch
-distriubted
+distributed
