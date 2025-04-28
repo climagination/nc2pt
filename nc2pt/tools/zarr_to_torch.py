@@ -38,6 +38,7 @@ def loop_over_variables(climate_data, model, var, s):
         f"{output_path}/{var.name}_{s}_{model.name}.zarr/", chunks=chunks
     ) as ds:
         ds = ds.sortby("time")
+        chunks = {dim: size for dim, size in chunks.items() if dim in ds.dims}
         # Create parent dir if it doesn't exist for each variable
         make_dirs(output_path, s, var.name, model.name)
         indices = ds.time.dt.strftime("%Y-%m-%d-%H").values
