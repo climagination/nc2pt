@@ -14,10 +14,10 @@
 _target_: nc2pt.climatedata.ClimateData # Iniatlizes ClimateData dataclass object
 output_path: /home/sbeairsto/data-sbeairsto/vancouver_island
 climate_models:
-  - _target_: nc2pt.climatedata.ClimateModel
-    name: hr
-    info: "High Resolution USask WRF, Western Canada"
-    climate_variables: # Provides a list of ClimateVariable dataclass objects to initialize
+  #- _target_: nc2pt.climatedata.ClimateModel
+  #  name: hr
+  #  info: "High Resolution USask WRF, Western Canada"
+  #  climate_variables: # Provides a list of ClimateVariable dataclass objects to initialize
       # - _target_: nc2pt.climatedata.ClimateVariable
       #   name: "pr"
       #   alternative_names: ["PREC"]
@@ -28,15 +28,15 @@ climate_models:
       #   invariant: false
       #   transform: []
 
-       - _target_: nc2pt.climatedata.ClimateVariable
-         name: "uas"
-         alternative_names: ["U10", "u10", "uas"]
-         path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
-         is_west_negative: true
-         apply_standardize: false
-         apply_normalize: true
-         invariant: false
-         transform: []
+      # - _target_: nc2pt.climatedata.ClimateVariable
+      #   name: "uas"
+      #   alternative_names: ["U10", "u10", "uas"]
+      #   path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
+      #   is_west_negative: true
+      #   apply_standardize: false
+      #   apply_normalize: true
+      #   invariant: false
+      #   transform: []
 
   #     - _target_: nc2pt.climatedata.ClimateVariable
   #       name: "vas"
