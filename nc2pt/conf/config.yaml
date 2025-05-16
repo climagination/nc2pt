@@ -69,27 +69,27 @@ climate_models:
       #  transform: []
   
 
-  - _target_: nc2pt.climatedata.ClimateModel
-    info: "Low resolution ERA5, Western Canada"
-    name: lr
-    hr_ref: # Reference field to interpolate to. Will need to provide new file if not using USask WRF
-      _target_: nc2pt.climatedata.ClimateVariable
-      name: "hr_ref"
-      alternative_names: ["T2"]
-      path: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
-      is_west_negative: true
-      invariant: true
+ # - _target_: nc2pt.climatedata.ClimateModel
+ #   info: "Low resolution ERA5, Western Canada"
+ #   name: lr
+ #   hr_ref: # Reference field to interpolate to. Will need to provide new file if not using USask WRF
+ #     _target_: nc2pt.climatedata.ClimateVariable
+ #     name: "hr_ref"
+ #     alternative_names: ["T2"]
+ #     path: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
+ #     is_west_negative: true
+ #     invariant: true
 
-    climate_variables:
-       - _target_: nc2pt.climatedata.ClimateVariable
-         name: "uas"
-         alternative_names: ["U10", "u10", "uas"]
-         path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
-         is_west_negative: false
-         apply_standardize: false
-         apply_normalize: true
-         invariant: false
-         transform: []
+ #   climate_variables:
+ #      - _target_: nc2pt.climatedata.ClimateVariable
+ #        name: "uas"
+ #        alternative_names: ["U10", "u10", "uas"]
+ #        path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+ #        is_west_negative: false
+ #        apply_standardize: false
+ #        apply_normalize: true
+ #        invariant: false
+ #        transform: []
   
       # - _target_: nc2pt.climatedata.ClimateVariable
       #   name: "pr"
@@ -136,8 +136,9 @@ climate_models:
 
 
   - _target_: nc2pt.climatedata.ClimateModel
-    name: invariant
+    name: hr_invariant
     info: "Static invariant fields for WRF domain"
+    engine: netcdf4
     climate_variables:
       - _target_: nc2pt.climatedata.ClimateVariable
         name: "HGT"
@@ -157,12 +158,12 @@ dims: # Defines the dimensions of the dataset and lists them to be initialized a
     chunksize: 100
   - _target_: nc2pt.climatedata.ClimateDimension
     name: rlat
-    alternative_names: ["rotated_latitude"]
+    alternative_names: ["rotated_latitude", "south_north"]
     hr_only: true
     chunksize: -1
   - _target_: nc2pt.climatedata.ClimateDimension
     name: rlon
-    alternative_names: ["rotated_longitude"]
+    alternative_names: ["rotated_longitude", "west_east"]
     hr_only: true
     chunksize: -1
   - _target_: nc2pt.climatedata.ClimateDimension

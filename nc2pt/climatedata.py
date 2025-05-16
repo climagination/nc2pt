@@ -33,6 +33,7 @@ class ClimateModel:
     info: str
     climate_variables: List[ClimateVariable]
     hr_ref: Optional[ClimateVariable] = None
+    engine: Optional[str] = None  # Optional engine override for this model
 
     def __post_init__(self):
         logging.info(f"🌎 Instantiated Model with information: {self.info}")

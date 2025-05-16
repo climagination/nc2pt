@@ -42,8 +42,9 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
     for climate_variable in model.climate_variables:
         # Instantiates climate_variable object in cliamtedata.py
         climate_variable = instantiate(climate_variable)
+        engine = model.engine or climdata.compute.engine
 
-        ds = load_grid(climate_variable.path, engine=climdata.compute.engine)
+        ds = load_grid(climate_variable.path, engine=engine)
 
         start = timer()
         logging.info(
