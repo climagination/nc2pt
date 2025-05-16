@@ -135,6 +135,21 @@ climate_models:
           # - "x - 273.15"
 
 
+  - _target_: nc2pt.climatedata.ClimateModel
+    name: invariant
+    info: "Static invariant fields for WRF domain"
+    climate_variables:
+      - _target_: nc2pt.climatedata.ClimateVariable
+        name: "HGT"
+        alternative_names: ["HGT", "elevation"]
+        path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
+        is_west_negative: false
+        invariant: true
+        apply_standardize: false
+        apply_normalize: false
+        transform: []
+
+
 dims: # Defines the dimensions of the dataset and lists them to be initialized as ClimateDimension objects
   - _target_: nc2pt.climatedata.ClimateDimension
     name: time
