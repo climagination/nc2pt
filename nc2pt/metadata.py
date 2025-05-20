@@ -63,6 +63,7 @@ def configure_metadata(
                 ds = ds.squeeze(k).drop_vars(k)
 
     ds = rename_keys(ds, outcome_obj=var, ds_attr="data_vars")
+    ds = drop_unused_variables(ds, var)
     ds = match_longitudes(ds) if var.is_west_negative else ds
 
     return ds
@@ -159,4 +160,43 @@ def flatten_2D_forecast_time(ds: xr.Dataset) -> xr.Dataset:
     ds = ds.drop_vars(["time", "forecast_initial_time", "forecast_hour"])
     ds = ds.assign_coords(time=("time", valid_time.values.ravel()))
     ds = ds.assign_coords(time=("time", valid_time.values.ravel()))
+    return ds
+
+
+def drop_unused_variables(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset:
+    """
+    Drop all variables from the dataset except the one declared in the ClimateVariable object.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset potentially containing multiple variables.
+    var : ClimateVariable
+        The ClimateVariable object specifying the intended variable to keep,
+        identified by its canonical `name`.
+
+    Returns
+    -------
+    xr.Dataset
+        A dataset containing only the specified variable.
+
+    Logs
+    ----
+    Logs a message listing how many dropped variables, if any.
+
+    Raises
+    ------
+    KeyError
+        If the target variable does not exist in the dataset.
+    """
+    if var.name not in ds:
+        raise KeyError(f"Declared variable '{var.name}' not found in dataset variables: {list(ds.variables)}")
+
+    all_vars = set(ds.variables)
+    ds = ds[[var.name]]
+    dropped = all_vars - {var.name}
+
+    if dropped:
+        logging.info(f"Dropping {len(dropped)} unused variables from dataset.")
+
     return ds
