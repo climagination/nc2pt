@@ -197,6 +197,6 @@ def drop_unused_variables(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset:
     dropped = all_vars - {var.name}
 
     if dropped:
-        logging.info(f"Dropping {len(dropped)} unused variables from dataset.")
+        logging.info(f"Dropping {len(dropped)} unused climate variables from dataset.")
 
     return ds
