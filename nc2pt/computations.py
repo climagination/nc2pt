@@ -190,3 +190,42 @@ def split_and_standardize(ds, climdata, var) -> dict:
         }
 
     return {"train": train, "test": test, "validation": validation}
+
+
+def standardize_or_normalize(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset:
+    """
+    Apply user-defined transformation, standardization, and normalization
+    to a dataset for a given ClimateVariable.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The input dataset containing the variable to transform.
+    var : ClimateVariable
+        The ClimateVariable object containing transformation and scaling flags.
+
+    Returns
+    -------
+    xr.Dataset
+        The dataset with the variable transformed, standardized, and/or normalized.
+
+    Notes
+    -----
+    - Applies a user-defined transformation first (if any).
+    - Standardization and normalization are applied in sequence.
+    - If neither is requested, logs that the step was skipped.
+    """
+    ds = user_defined_transform(ds, var)
+
+    if var.apply_standardize:
+        logging.info(f"Standardizing {var.name}...")
+        ds = compute_standardization(ds, var.name)
+
+    if var.apply_normalize:
+        logging.info(f"Normalizing {var.name}...")
+        ds = compute_normalization(ds, var.name)
+
+    if not var.apply_standardize and not var.apply_normalize:
+        logging.info(f"Skipping standardization and normalization for {var.name}.")
+
+    return ds
