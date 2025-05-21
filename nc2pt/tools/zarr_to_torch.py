@@ -34,23 +34,51 @@ def loop_over_variables(climate_data, model, var, s):
     dims = [instantiate(dim) for dim in climate_data.dims]
     chunks = {dim.name: dim.chunksize for dim in dims}
 
-    with xr.open_zarr(
-        f"{output_path}/{var.name}_{s}_{model.name}.zarr/", chunks=chunks
-    ) as ds:
+    output_subfolder = "invariant" if s is None else s
+
+    if s is None:
+        zarr_path = f"{output_path}/{var.name}_{model.name}.zarr/"
+    else:
+        zarr_path = f"{output_path}/{var.name}_{s}_{model.name}.zarr/"
+
+    with xr.open_zarr(zarr_path, chunks=chunks) as ds:
+
+        # Handle invariant variable
+        if "time" not in ds.dims or getattr(var, "invariant", False):
+            logging.info(f"{var.name} is invariant. Saving without time slicing.")
+            make_dirs(output_path, output_subfolder, var.name, model.name)
+
+            path = f"{output_path}/{output_subfolder}/{var.name}/{model.name}/{var.name}.pt"
+            arr = ds[var.name].values
+            x = torch.tensor(np.array(arr))
+            assert not torch.isnan(x).any(), f"NaNs found in {var.name}"
+            torch.save(x, path)
+
+            # Save attributes
+            attrs = ds[var.name].attrs
+            attrs_file = Path(
+                f"{output_path}/{output_subfolder}/{var.name}/{model.name}/{var.name}_attrs.yaml"
+            )
+            with open(attrs_file, "w") as f:
+                f.write("attributes:\n")
+                for key, value in attrs.items():
+                    f.write(f"  {key}: {value}\n")
+            return
+
         ds = ds.sortby("time")
         # Create parent dir if it doesn't exist for each variable
-        make_dirs(output_path, s, var.name, model.name)
+        make_dirs(output_path, output_subfolder, var.name, model.name)
         indices = ds.time.dt.strftime("%Y-%m-%d-%H").values
-
+        
         partial_paths = [
-            f"{output_path}/{s}/{var.name}/{model.name}/{var.name}_{i}.pt"
+            f"{output_path}/{output_subfolder}/{var.name}/{model.name}/{var.name}_{i}.pt"
             for i in indices
         ]
 
         pool_tuple = zip(
             indices,
             partial_paths,
-            ds[var.name].transpose(*chunks.keys()),
+            ds[var.name].transpose(*[dim for dim in chunks.keys() if dim in ds[var.name].dims]),
         )
 
         progress_starmap(
@@ -58,10 +86,11 @@ def loop_over_variables(climate_data, model, var, s):
         )
 
 
-def loop_over_sets(climate_data, model, s):
+def loop_over_sets(climate_data, model, s: str = None):
     model = instantiate(model)
+    label = s if s else "invariant"
 
-    logging.info(f"Loading {s} {model.name} dataset...")
+    logging.info(f"Loading {label} {model.name} dataset...")
     for var in model.climate_variables:
         logging.info(f"Processing {var.name} variable...")
         if s == "train":
@@ -91,9 +120,13 @@ def main(climate_data) -> None:
     for model in climate_data.climate_models:
         start = timer()
 
-        partial_set_loop = partial(loop_over_sets, climate_data, model)
-        for s in ["train", "test", "validation"]:
-            partial_set_loop(s)
+        if all(getattr(var, "invariant", False) for var in model.climate_variables):
+            logging.info(f"Processing invariant model: {model.name}")
+            loop_over_sets(climate_data, model, s=None)
+        else:
+            partial_set_loop = partial(loop_over_sets, climate_data, model)
+            for s in ["train", "test", "validation"]:
+                partial_set_loop(s)
 
         end = timer()
         logging.info(f"Finished {model.name} dataset in {timedelta(seconds=end-start)}")
