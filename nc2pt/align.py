@@ -88,7 +88,7 @@ def train_test_split(
     return {"train": train, "test": test, "validation": validation}
 
 
-def crop_field(ds, scale_factor, x, y):
+def crop_field(ds, scale_factor, x, y, downsample=False):
     """Crop the field to the given size.
 
     Parameters
@@ -126,6 +126,11 @@ def crop_field(ds, scale_factor, x, y):
     assert (
         ds.rlon.size == ds.rlat.size
     ), "rlon and rlat not the same size, check dataset"
+
+    if downsample:
+        # Optional coarsen for low resolution invariant fields.
+        logging.info("🌎 Coarsening HR invariant to become LR invariant...")
+        ds = coarsen_lr(ds, scale_factor)
 
     return ds
 

@@ -75,6 +75,13 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
                 x=climdata.select.spatial.x,
                 y=climdata.select.spatial.y,
             ),
+            "lr_invariant": partial(
+                crop_field,
+                scale_factor=climdata.select.spatial.scale_factor,
+                x=climdata.select.spatial.x,
+                y=climdata.select.spatial.y,
+                downsample=getattr(model, "downsample", False),
+            ),
         }
 
         # This implies that it is a different grid or a lr dataset.
