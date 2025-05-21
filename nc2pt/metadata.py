@@ -1,6 +1,6 @@
 import logging
 from hydra.utils import instantiate
-from typing import Union
+from typing import Union, List
 from nc2pt.climatedata import ClimateDimension, ClimateVariable, ClimateData
 import xarray as xr
 
@@ -63,7 +63,8 @@ def configure_metadata(
                 ds = ds.squeeze(k).drop_vars(k)
 
     ds = rename_keys(ds, outcome_obj=var, ds_attr="data_vars")
-    ds = drop_unused_variables(ds, var)
+    preserve = [dim.name for dim in climdata.dims] + [coord.name for coord in climdata.coords]
+    ds = drop_unused_variables(ds, var, preserve_vars=preserve)
     ds = match_longitudes(ds) if var.is_west_negative else ds
 
     return ds
@@ -163,40 +164,48 @@ def flatten_2D_forecast_time(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def drop_unused_variables(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset:
+def drop_unused_variables(
+    ds: xr.Dataset,
+    var: ClimateVariable,
+    preserve_vars: List[str]
+) -> xr.Dataset:
     """
-    Drop all variables from the dataset except the one declared in the ClimateVariable object.
+    Drop all data variables from the dataset except the one declared in the ClimateVariable object
+    and any variables explicitly listed to be preserved (e.g., dimensions and coordinates).
 
     Parameters
     ----------
     ds : xr.Dataset
         The dataset potentially containing multiple variables.
     var : ClimateVariable
-        The ClimateVariable object specifying the intended variable to keep,
-        identified by its canonical `name`.
+        The ClimateVariable object specifying the intended variable to keep.
+    preserve_vars : List[str]
+        A list of variable names to retain in addition to the main variable (e.g., time, lat, lon).
 
     Returns
     -------
     xr.Dataset
-        A dataset containing only the specified variable.
+        A filtered dataset containing only the target variable and the preserved variables.
 
     Logs
     ----
-    Logs a message listing how many dropped variables, if any.
+    Logs a message listing all dropped variables, if any.
 
     Raises
     ------
     KeyError
-        If the target variable does not exist in the dataset.
+        If the target variable is not found in the dataset.
     """
     if var.name not in ds:
         raise KeyError(f"Declared variable '{var.name}' not found in dataset variables: {list(ds.variables)}")
 
+    keep_vars = {var.name, *preserve_vars}
     all_vars = set(ds.variables)
-    ds = ds[[var.name]]
-    dropped = all_vars - {var.name}
+    to_drop = all_vars - keep_vars
 
-    if dropped:
-        logging.info(f"Dropping {len(dropped)} unused climate variables from dataset.")
+    if to_drop:
+        logging.info(f"Dropping unused variables from {var.path}: {sorted(to_drop)}")
+
+    ds = ds.drop_vars(to_drop, errors="ignore")
 
     return ds
