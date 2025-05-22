@@ -49,9 +49,10 @@ def loop_over_variables(climate_data, model, var, s):
             make_dirs(output_path, output_subfolder, var.name, model.name)
 
             path = f"{output_path}/{output_subfolder}/{var.name}/{model.name}/{var.name}.pt"
-            arr = ds[var.name].values
+            arr = ds[var.name].squeeze().values
             x = torch.tensor(np.array(arr))
             assert not torch.isnan(x).any(), f"NaNs found in {var.name}"
+            assert x.ndim == 2, f"Expected 2D invariant field, got shape: {x.shape}"
             torch.save(x, path)
 
             # Save attributes
