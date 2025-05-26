@@ -221,11 +221,11 @@ def standardize_or_normalize(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset
         logging.info(f"Standardizing {var.name}...")
         ds = compute_standardization(ds, var.name)
 
-    if var.apply_normalize:
+    elif var.apply_normalize:
         logging.info(f"Normalizing {var.name}...")
         ds = compute_normalization(ds, var.name)
 
-    if not var.apply_standardize and not var.apply_normalize:
+    else:
         logging.info(f"Skipping standardization and normalization for {var.name}.")
 
     return ds
