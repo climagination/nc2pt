@@ -1,6 +1,6 @@
 import logging
 from hydra.utils import instantiate
-from typing import Union
+from typing import Union, List
 from nc2pt.climatedata import ClimateDimension, ClimateVariable, ClimateData
 import xarray as xr
 
@@ -63,6 +63,8 @@ def configure_metadata(
                 ds = ds.squeeze(k).drop_vars(k)
 
     ds = rename_keys(ds, outcome_obj=var, ds_attr="data_vars")
+    preserve = [dim.name for dim in climdata.dims] + [coord.name for coord in climdata.coords]
+    ds = drop_unused_variables(ds, var, preserve_vars=preserve)
     ds = match_longitudes(ds) if var.is_west_negative else ds
 
     return ds
@@ -159,4 +161,51 @@ def flatten_2D_forecast_time(ds: xr.Dataset) -> xr.Dataset:
     ds = ds.drop_vars(["time", "forecast_initial_time", "forecast_hour"])
     ds = ds.assign_coords(time=("time", valid_time.values.ravel()))
     ds = ds.assign_coords(time=("time", valid_time.values.ravel()))
+    return ds
+
+
+def drop_unused_variables(
+    ds: xr.Dataset,
+    var: ClimateVariable,
+    preserve_vars: List[str]
+) -> xr.Dataset:
+    """
+    Drop all data variables from the dataset except the one declared in the ClimateVariable object
+    and any variables explicitly listed to be preserved (e.g., dimensions and coordinates).
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset potentially containing multiple variables.
+    var : ClimateVariable
+        The ClimateVariable object specifying the intended variable to keep.
+    preserve_vars : List[str]
+        A list of variable names to retain in addition to the main variable (e.g., time, lat, lon).
+
+    Returns
+    -------
+    xr.Dataset
+        A filtered dataset containing only the target variable and the preserved variables.
+
+    Logs
+    ----
+    Logs a message listing all dropped variables, if any.
+
+    Raises
+    ------
+    KeyError
+        If the target variable is not found in the dataset.
+    """
+    if var.name not in ds:
+        raise KeyError(f"Declared variable '{var.name}' not found in dataset variables: {list(ds.variables)}")
+
+    keep_vars = {var.name, *preserve_vars}
+    all_vars = set(ds.variables)
+    to_drop = all_vars - keep_vars
+
+    if to_drop:
+        logging.info(f"Dropping unused variables from {var.path}: {sorted(to_drop)}")
+
+    ds = ds.drop_vars(to_drop, errors="ignore")
+
     return ds

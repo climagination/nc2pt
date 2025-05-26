@@ -12,41 +12,41 @@
 # _target_ is loaded as a dataclass in climatedata.py with some inheritance.
 
 _target_: nc2pt.climatedata.ClimateData # Iniatlizes ClimateData dataclass object
-output_path: /path/to/my/data/folder
+output_path: /home/path/to/my/data
 climate_models:
   - _target_: nc2pt.climatedata.ClimateModel
     name: hr
     info: "High Resolution USask WRF, Western Canada"
     climate_variables: # Provides a list of ClimateVariable dataclass objects to initialize
-       - _target_: nc2pt.climatedata.ClimateVariable
-         name: "pr"
-         alternative_names: ["PREC"]
-         path:  /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/PREC/*.nc
-         is_west_negative: true
-         apply_standardize: false
-         apply_normalize: true
-         invariant: false
-         transform: []
+      - _target_: nc2pt.climatedata.ClimateVariable
+        name: "pr"
+        alternative_names: ["PREC"]
+        path:  /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/PREC/*.nc
+        is_west_negative: true
+        apply_standardize: false
+        apply_normalize: true
+        invariant: false
+        transform: []
 
-       - _target_: nc2pt.climatedata.ClimateVariable
-         name: "uas"
-         alternative_names: ["U10", "u10", "uas"]
-         path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
-         is_west_negative: true
-         apply_standardize: false
-         apply_normalize: true
-         invariant: false
-         transform: []
+      # - _target_: nc2pt.climatedata.ClimateVariable
+      #   name: "uas"
+      #   alternative_names: ["U10", "u10", "uas"]
+      #   path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
+      #   is_west_negative: true
+      #   apply_standardize: false
+      #   apply_normalize: true
+      #   invariant: false
+      #   transform: []
 
-  #     - _target_: nc2pt.climatedata.ClimateVariable
-  #       name: "vas"
-  #       alternative_names: ["V10", "v10", "vas"]
-  #       path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/V10/*.nc
-  #       is_west_negative: true
-  #       apply_standardize: false
-  #       apply_normalize: true
-  #       invariant: false
-  #       transform: []        
+      # - _target_: nc2pt.climatedata.ClimateVariable
+      #   name: "vas"
+      #   alternative_names: ["V10", "v10", "vas"]
+      #   path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/V10/*.nc
+      #   is_west_negative: true
+      #   apply_standardize: false
+      #   apply_normalize: true
+      #   invariant: false
+      #   transform: []        
 
       # - _target_: nc2pt.climatedata.ClimateVariable
       #   name: "RH"
@@ -58,15 +58,15 @@ climate_models:
       #   invariant: false
       #   transform: []
 
-      #- _target_: nc2pt.climatedata.ClimateVariable
-      #  name: "tas"
-      #  alternative_names: ["T2", "surface temperature"]
-      #  path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/T2/*.nc
-      #  is_west_negative: true
-      #  apply_standardize: false
-      #  apply_normalize: true
-      #  invariant: false
-      #  transform: []
+      # - _target_: nc2pt.climatedata.ClimateVariable
+      #   name: "tas"
+      #   alternative_names: ["T2", "surface temperature"]
+      #   path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/T2/*.nc
+      #   is_west_negative: true
+      #   apply_standardize: false
+      #   apply_normalize: true
+      #   invariant: false
+      #   transform: []
   
 
   - _target_: nc2pt.climatedata.ClimateModel
@@ -76,63 +76,95 @@ climate_models:
       _target_: nc2pt.climatedata.ClimateVariable
       name: "hr_ref"
       alternative_names: ["T2"]
-      path: /home/my_username/nc2pt/nc2pt/data/hr_ref.nc
+      path: /home/username/projects/nc2pt/nc2pt/data/hr_ref.nc
       is_west_negative: true
       invariant: true
 
     climate_variables:
-       - _target_: nc2pt.climatedata.ClimateVariable
-         name: "uas"
-         alternative_names: ["U10", "u10", "uas"]
-         path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
-         is_west_negative: false
-         apply_standardize: false
-         apply_normalize: true
-         invariant: false
-         transform: []
+        - _target_: nc2pt.climatedata.ClimateVariable
+          name: "uas"
+          alternative_names: ["U10", "u10", "uas"]
+          path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+          is_west_negative: false
+          apply_standardize: false
+          apply_normalize: true
+          invariant: false
+          transform: []
   
-       - _target_: nc2pt.climatedata.ClimateVariable
-         name: "pr"
-         alternative_names: ["PREC"]
-         path: '/net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/pr_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc'
-         is_west_negative: false
-         apply_standardize: false
-         apply_normalize: true
-         invariant: false
-         transform: ["x * 3600"]
-         #  - "x * 3600"
+  #       - _target_: nc2pt.climatedata.ClimateVariable
+  #         name: "pr"
+  #         alternative_names: ["PREC"]
+  #         path: '/net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/pr_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc'
+  #         is_west_negative: false
+  #         apply_standardize: false
+  #         apply_normalize: true
+  #         invariant: false
+  #         transform: ["x * 3600"]
+  #           - "x * 3600"
 
-# # for some reason, the way RH was written to file requires time chunks be explicitly defined in io.py.
-# # Other files will process fine, don't know what to do about this problem...
-#       - _target_: nc2pt.climatedata.ClimateVariable
-#         name: "RH"
-#         alternative_names: ["rh", "huss", "Q2", "q2"]
-#         path: path/to/my/ERA5/relative_humidity/RH.nc
-#         is_west_negative: false
-#         apply_standardize: false
-#         apply_normalize: true
-#         invariant: false
-#         transform: []
+  # # for some reason, the way RH was written to file requires time chunks be explicitly defined in io.py.
+  # # Other files will process fine, don't know what to do about this problem...
+  #       - _target_: nc2pt.climatedata.ClimateVariable
+  #         name: "RH"
+  #         alternative_names: ["rh", "huss", "Q2", "q2"]
+  #         path: path/to/my/ERA5/relative_humidity/RH.nc
+  #         is_west_negative: false
+  #         apply_standardize: false
+  #         apply_normalize: true
+  #         invariant: false
+  #         transform: []
 
-#       - _target_: nc2pt.climatedata.ClimateVariable
-#         name: "vas"
-#         alternative_names: ["V10", "v10", "vas"]
-#         path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/vas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
-#         apply_standardize: false
-#         apply_normalize: true
-#         invariant: false
-#         transform: []
+  #       - _target_: nc2pt.climatedata.ClimateVariable
+  #         name: "vas"
+  #         alternative_names: ["V10", "v10", "vas"]
+  #         path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/vas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+  #         apply_standardize: false
+  #         apply_normalize: true
+  #         invariant: false
+  #         transform: []
 
-#      - _target_: nc2pt.climatedata.ClimateVariable
-#        name: "tas"
-#        alternative_names: ["T2", "surface temperature"]
-#        path: '/net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc'
-#        is_west_negative: false
-#        apply_standardize: false
-#        apply_normalize: true
-#        invariant: false
-#        transform: []
-          # - "x - 273.15"
+  #       - _target_: nc2pt.climatedata.ClimateVariable
+  #         name: "tas"
+  #         alternative_names: ["T2", "surface temperature"]
+  #         path: '/net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc'
+  #         is_west_negative: false
+  #         apply_standardize: false
+  #         apply_normalize: true
+  #         invariant: false
+  #         transform: []
+  #             - "x - 273.15"
+
+
+  - _target_: nc2pt.climatedata.ClimateModel
+    name: hr_invariant
+    info: "HR static invariant fields for WRF domain"
+    engine: netcdf4
+    climate_variables:
+      - _target_: nc2pt.climatedata.ClimateVariable
+        name: "topography"
+        alternative_names: ["HGT"]
+        path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
+        is_west_negative: false
+        invariant: true
+        apply_standardize: false
+        apply_normalize: true
+        transform: []
+
+  - _target_: nc2pt.climatedata.ClimateModel
+    name: lr_invariant
+    info: "HR static invariant fields for WRF domain to be downsampled to LR"
+    engine: netcdf4
+    downsample: true
+    climate_variables:
+      - _target_: nc2pt.climatedata.ClimateVariable
+        name: "topography"
+        alternative_names: ["HGT"]
+        path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
+        is_west_negative: false
+        invariant: true
+        apply_standardize: false
+        apply_normalize: true
+        transform: []
 
 
 dims: # Defines the dimensions of the dataset and lists them to be initialized as ClimateDimension objects
@@ -142,12 +174,12 @@ dims: # Defines the dimensions of the dataset and lists them to be initialized a
     chunksize: 100
   - _target_: nc2pt.climatedata.ClimateDimension
     name: rlat
-    alternative_names: ["rotated_latitude"]
+    alternative_names: ["rotated_latitude", "south_north"]
     hr_only: true
     chunksize: -1
   - _target_: nc2pt.climatedata.ClimateDimension
     name: rlon
-    alternative_names: ["rotated_longitude"]
+    alternative_names: ["rotated_longitude", "west_east"]
     hr_only: true
     chunksize: -1
   - _target_: nc2pt.climatedata.ClimateDimension
@@ -199,7 +231,6 @@ select:
     y:
       first_index: 20
       last_index: 532
-
 
 
 # dask client parameters

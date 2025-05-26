@@ -1,7 +1,7 @@
 from nc2pt.metadata import configure_metadata
 from nc2pt.io import load_grid, write_to_zarr
 from nc2pt.align import align_with_lr, crop_field, slice_time
-from nc2pt.computations import split_and_standardize, user_defined_transform
+from nc2pt.computations import split_and_standardize, standardize_or_normalize
 from nc2pt.climatedata import ClimateData, ClimateModel
 
 import logging
@@ -42,8 +42,9 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
     for climate_variable in model.climate_variables:
         # Instantiates climate_variable object in cliamtedata.py
         climate_variable = instantiate(climate_variable)
+        engine = model.engine or climdata.compute.engine
 
-        ds = load_grid(climate_variable.path, engine=climdata.compute.engine)
+        ds = load_grid(climate_variable.path, engine=engine)
 
         start = timer()
         logging.info(
@@ -74,6 +75,13 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
                 x=climdata.select.spatial.x,
                 y=climdata.select.spatial.y,
             ),
+            "lr_invariant": partial(
+                crop_field,
+                scale_factor=climdata.select.spatial.scale_factor,
+                x=climdata.select.spatial.x,
+                y=climdata.select.spatial.y,
+                downsample=getattr(model, "downsample", False),
+            ),
         }
 
         # This implies that it is a different grid or a lr dataset.
@@ -90,6 +98,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
                 )
 
         else:
+            ds = standardize_or_normalize(ds, climate_variable)
             logging.info("✨ Writing output...")
             write_to_zarr(
                 climdata.apply_chunks(ds),
