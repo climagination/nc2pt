@@ -1,4 +1,4 @@
-from nc2pt.metadata import configure_metadata
+from nc2pt.metadata import configure_metadata, NormalizerMetadataCollector
 from nc2pt.io import load_grid, write_to_zarr
 from nc2pt.align import align_with_lr, crop_field, slice_time
 from nc2pt.computations import split_and_standardize, standardize_or_normalize
@@ -12,6 +12,8 @@ import hydra
 from hydra.utils import instantiate
 from dask.distributed import Client
 import dask
+import cProfile
+import pstats
 
 
 def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
@@ -29,6 +31,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
     """
 
     configure_metadata_fn = partial(configure_metadata, climdata=climdata)
+    metadata_collector = NormalizerMetadataCollector(climdata.output_path)
     alignment_procedures = {}
     if model.hr_ref is not None:
         hr_ref = load_grid(model.hr_ref.path, engine=climdata.compute.engine)
@@ -90,6 +93,10 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
             train_test_validation_ds = split_and_standardize(
                 ds, climdata, climate_variable
             )
+            metadata_collector.add_variable_from_config(climate_data=climdata,
+                                                        climate_variable=climate_variable,
+                                                        processed_ds=train_test_validation_ds["train"],
+                                                        model_name=model.name)
             for train_test_validation in train_test_validation_ds:
                 logging.info(f"✨ Writing {train_test_validation} output...")
                 write_to_zarr(
@@ -109,6 +116,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         logging.info(f"🎉 Done processing {climate_variable.name} in {model.info}!")
         logging.info(f"⏳ Time elapsed ⏳: {timedelta(seconds=end-start)}")
         del ds
+    metadata_collector.write_all()
 
 
 def preprocess(climdata: ClimateData) -> None:
@@ -129,4 +137,5 @@ def start(climate_data) -> None:
 
 if __name__ == "__main__":
     with dask.config.set(**{"array.slicing.split_large_chunks": False}):
-        start()
+        with cProfile.Profile() as pr:
+            start()
