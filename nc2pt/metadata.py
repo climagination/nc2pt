@@ -1,3 +1,7 @@
+import json
+import hashlib
+from datetime import datetime
+from pathlib import Path
 import logging
 from hydra.utils import instantiate
 from typing import Union, List
@@ -15,6 +19,160 @@ class MissingKey(Exception):
     """Raised when a variable is missing from the dataset."""
 
     pass
+
+
+class NormalizerMetadataCollector:
+    """
+    Collects and writes normalization or standardization metadata for climate variables.
+
+    Tracks attributes like min/max or mean/std, units, transforms, and spatial settings
+    for each variable after standardization/normalization is applied. Saves the metadata
+    to per-variable JSON files with a content hash for reproducibility and validation.
+    """
+
+    def __init__(self, output_dir: str):
+        """
+        Initialize the collector and create the output directory.
+
+        Args:
+            output_dir: Directory where normalization JSON files will be written.
+        """
+        self.metadata = {}
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        logging.info(f"📁 NormalizerMetadataCollector initialized with output dir: {self.output_dir}")
+
+    def _compute_hash(self, data: dict) -> str:
+        """
+        Compute a SHA256 hash of the metadata dictionary (excluding the 'hash' field).
+
+        Args:
+            data: Dictionary to hash.
+
+        Returns:
+            SHA256 hash string.
+        """
+        temp = {k: v for k, v in data.items() if k != "hash"}
+        temp_json = json.dumps(temp, sort_keys=True)
+        return hashlib.sha256(temp_json.encode()).hexdigest()
+
+    def _extract_stats(self, variable: ClimateVariable, attrs: dict) -> dict:
+        """
+        Extract normalization or standardization statistics from xarray attributes.
+
+        Args:
+            variable: The ClimateVariable being processed.
+            attrs: The attributes from the xarray variable.
+
+        Returns:
+            A dictionary containing method and statistics (min/max or mean/std).
+        """
+        if variable.apply_normalize:
+            return {
+                "method": "minmax",
+                "min": float(attrs["min"]),
+                "max": float(attrs["max"]),
+            }
+        elif variable.apply_standardize:
+            return {
+                "method": "standard",
+                "mean": float(attrs["mean"]),
+                "std": float(attrs["std"]),
+            }
+        return {}
+
+    def _get_spatial_crop(self, climate_data: ClimateData) -> dict:
+        """
+        Retrieve the spatial crop bounds from the config.
+
+        Args:
+            climate_data: Full ClimateData config object.
+
+        Returns:
+            Dict with x and y crop bounds.
+        """
+        spatial_cfg = climate_data.select["spatial"]
+        return {
+            "x": [spatial_cfg["x"]["first_index"], spatial_cfg["x"]["last_index"]],
+            "y": [spatial_cfg["y"]["first_index"], spatial_cfg["y"]["last_index"]],
+        }
+
+    def _get_hr_ref_path(self, climate_data: ClimateData, model_name: str) -> str:
+        """
+        Look up the HR reference field path from the model config.
+
+        Args:
+            climate_data: Full ClimateData config.
+            model_name: Name of the model (e.g., 'lr').
+
+        Returns:
+            The path to the HR reference field, or None.
+        """
+        for model in climate_data.climate_models:
+            if model.name == model_name and model.hr_ref is not None:
+                return model.hr_ref.path
+        return None
+
+    def add_variable_from_config(
+        self,
+        climate_data: ClimateData,
+        climate_variable: ClimateVariable,
+        processed_ds: xr.Dataset,
+        model_name: str,
+    ):
+        """
+        Add metadata for a single climate variable after it's been normalized or standardized.
+
+        Args:
+            climate_data: Full ClimateData config object.
+            climate_variable: The ClimateVariable being processed.
+            processed_ds: xarray.Dataset that contains processed data for this variable.
+            model_name: Name of the model this variable belongs to (e.g., 'lr').
+        """
+        var_name = climate_variable.name
+        attrs = processed_ds[var_name].attrs
+
+        stats = self._extract_stats(climate_variable, attrs)
+        if not stats:
+            logging.info(f"⚠️  Skipping variable '{var_name}': not scaled.")
+            return
+
+        units = attrs.get("units", "unknown")
+        logging.info(f"📦 Adding metadata for variable: {var_name}")
+
+        self.metadata[var_name] = {
+            "variable": var_name,
+            **stats,
+            "units": {
+                "original": units,
+                "post_transform": units  # Extend later if needed
+            },
+            "apply_normalize": climate_variable.apply_normalize,
+            "apply_standardize": climate_variable.apply_standardize,
+            "transforms": climate_variable.transform or [],
+            "is_west_negative": climate_variable.is_west_negative,
+            "spatial_scale_factor": climate_data.select["spatial"]["scale_factor"],
+            "spatial_crop": self._get_spatial_crop(climate_data),
+            "hr_reference_field": self._get_hr_ref_path(climate_data, model_name),
+            "created": datetime.utcnow().isoformat() + "Z"
+        }
+
+    def write_all(self):
+        """
+        Write each variable's metadata to a JSON file in the output directory.
+        Adds a hash field for traceability.
+        """
+        if not self.metadata:
+            logging.warning("⚠️ No metadata to write.")
+            return
+
+        for var_name, meta in self.metadata.items():
+            meta["hash"] = self._compute_hash(meta)
+            out_path = self.output_dir / f"{var_name}_normalization_metadata.json"
+            logging.info(f"📝 Writing metadata for '{var_name}' to {out_path}")
+            with out_path.open("w") as f:
+                json.dump(meta, f, indent=2)
+            logging.info(f"✅ Wrote: {out_path}")
 
 
 def configure_metadata(
