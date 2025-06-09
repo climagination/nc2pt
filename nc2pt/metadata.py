@@ -113,6 +113,30 @@ class NormalizerMetadataCollector:
                 return model.hr_ref.path
         return None
 
+    def log_variable_units_from_dataset(self, variable_name: str, ds: xr.Dataset) -> None:
+        """
+        Extract and log the original units for a given variable from a dataset.
+
+        This should be called early in the workflow, before normalization or 
+        standardization is applied. It stores the 'original' units in the metadata, 
+        and leaves 'post_transform' as 'unknown' for now.
+
+        Args:
+            variable_name (str): Name of the climate variable (e.g., 'uas').
+            ds (xarray.Dataset): Dataset containing the variable.
+        """
+        units = ds[variable_name].attrs.get("units", "unknown")
+        logging.info(f"Extracted units for variable '{variable_name}': {units}")
+
+        if variable_name not in self.metadata:
+            self.metadata[variable_name] = {
+                "units": {"original": units, "post_transform": "unknown"}
+            }
+        else:
+            self.metadata[variable_name].setdefault("units", {})
+            self.metadata[variable_name]["units"]["original"] = units
+            self.metadata[variable_name]["units"].setdefault("post_transform", "unknown")
+
     def add_variable_from_config(
         self,
         climate_data: ClimateData,
@@ -137,16 +161,13 @@ class NormalizerMetadataCollector:
             logging.info(f"⚠️  Skipping variable '{var_name}': not scaled.")
             return
 
-        units = attrs.get("units", "unknown")
         logging.info(f"📦 Adding metadata for variable: {var_name}")
 
-        self.metadata[var_name] = {
+        self.metadata.setdefault(var_name, {})  # Preserve existing entries like "units"
+
+        self.metadata[var_name].update({
             "variable": var_name,
             **stats,
-            "units": {
-                "original": units,
-                "post_transform": units  # Extend later if needed
-            },
             "apply_normalize": climate_variable.apply_normalize,
             "apply_standardize": climate_variable.apply_standardize,
             "transforms": climate_variable.transform or [],
@@ -154,8 +175,13 @@ class NormalizerMetadataCollector:
             "spatial_scale_factor": climate_data.select["spatial"]["scale_factor"],
             "spatial_crop": self._get_spatial_crop(climate_data),
             "hr_reference_field": self._get_hr_ref_path(climate_data, model_name),
-            "created": datetime.utcnow().isoformat() + "Z"
-        }
+            "created": datetime.utcnow().isoformat() + "Z",
+        })
+
+        # Ensure 'units' dict exists and has both keys set
+        self.metadata[var_name].setdefault("units", {})
+        self.metadata[var_name]["units"].setdefault("original", "unknown")
+        self.metadata[var_name]["units"].setdefault("post_transform", "unknown")
 
     def write_all(self):
         """

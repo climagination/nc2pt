@@ -53,6 +53,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         )
 
         ds = configure_metadata_fn(ds, climate_variable)
+        metadata_collector.log_variable_units_from_dataset(climate_variable.name, ds)
         ds = climdata.apply_chunks(ds)
 
         ds = (
