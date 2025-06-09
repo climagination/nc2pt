@@ -12,8 +12,6 @@ import hydra
 from hydra.utils import instantiate
 from dask.distributed import Client
 import dask
-import cProfile
-import pstats
 
 
 def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
@@ -137,5 +135,4 @@ def start(climate_data) -> None:
 
 if __name__ == "__main__":
     with dask.config.set(**{"array.slicing.split_large_chunks": False}):
-        with cProfile.Profile() as pr:
-            start()
+        start()
