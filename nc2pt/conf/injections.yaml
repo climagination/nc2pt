@@ -1,0 +1,8 @@
+defaults:
+  - paths@internal
+  - climate_models/hr@internal._hr_model
+  - climate_models/hr/uas@internal._hr_uas
+
+internal:
+  hr: ${internal._hr_model}
+  hr_uas: ${internal._hr_uas}

@@ -1,0 +1,9 @@
+coords:
+  - _target_: nc2pt.climatedata.ClimateDimension
+    name: lat
+    alternative_names: ["latitude", "Lat", "Latitude"]
+    chunksize: 100
+  - _target_: nc2pt.climatedata.ClimateDimension
+    name: lon
+    alternative_names: ["longitude", "Long", "Lon", "Longitude"]
+    chunksize: 100

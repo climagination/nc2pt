@@ -1,0 +1,19 @@
+defaults:
+  - _self_
+
+_target_: nc2pt.climatedata.ClimateModel
+name: hr
+info: "High Resolution USask WRF, Western Canada"
+
+climate_variables:
+  - ${internal.hr_uas}
+
+  #- variables/vas
+  #- variables/pr
+  #- variables/tas
+
+#climate_variables:
+  #- ${hr.variables.uas}
+  #- ${climate_models.hr.variables.vas}
+  #- ${climate_models.hr.variables.pr}
+  #- ${climate_models.hr.variables.tas}

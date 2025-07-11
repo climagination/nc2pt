@@ -1,0 +1,15 @@
+_target_: nc2pt.climatedata.ClimateModel
+name: lr
+info: "Low resolution ERA5, Western Canada"
+hr_ref: # Reference field to interpolate to. Will need to provide new file if not using USask WRF
+  _target_: nc2pt.climatedata.ClimateVariable
+  name: "hr_ref"
+  alternative_names: ["T2"]
+  path: ${paths.hr_ref}
+  is_west_negative: true
+  invariant: true
+climate_variables:
+  - ${climate_models.lr.variables.uas}
+  #- ${climate_models.lr.variables.vas}
+  #- ${climate_models.lr.variables.pr}
+  #- ${climate_models.lr.variables.tas}

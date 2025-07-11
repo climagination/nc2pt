@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import logging
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Any, Dict
 import xarray as xr
 
 
@@ -14,6 +14,7 @@ class ClimateDimension:
 
 @dataclass
 class ClimateVariable:
+    package: str
     name: str
     alternative_names: List[str]
     path: str
@@ -49,6 +50,7 @@ class ClimateData:
     select: dict
     compute: dict
     loader: dict
+    internal: Dict[str, Any] = field(default_factory=dict, repr=False)
 
     def apply_chunks(self, ds: xr.Dataset) -> xr.Dataset:
         """

@@ -1,0 +1,20 @@
+paths:
+  # user dependent 
+  hr_ref: /home/username/projects/nc2pt/nc2pt/data/hr_ref.nc
+  
+  # shared
+  hr:
+    uas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
+    vas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/V10/*.nc
+    pr:  /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/PREC/*.nc
+    tas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/T2/*.nc
+
+  lr:
+    uas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+    vas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/vas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+    pr:  /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/pr_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc
+    tas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+
+  hr_invariant: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
+
+  
