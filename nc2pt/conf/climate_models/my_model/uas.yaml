@@ -1,0 +1,12 @@
+# Template for defining a new variable for a model (e.g., 10-metre U wind)
+_target_: nc2pt.climatedata.ClimateVariable
+
+name: uas
+alternative_names: ["uas", "U10", "u10"]
+path: ${internal.paths.my_model.uas}
+
+is_west_negative: true
+invariant: false
+apply_standardize: false
+apply_normalize: true
+transform: []

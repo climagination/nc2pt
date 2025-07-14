@@ -1,9 +1,11 @@
+# Precipitation from ERA5 (LR Model)
+
 _target_: nc2pt.climatedata.ClimateVariable
-name: "uas"
-alternative_names: ["U10", "u10", "uas"]
-path: ${paths.lr.uas}
+name: "pr"
+alternative_names: ["PREC"]
+path: ${internal.paths.lr.pr}
 is_west_negative: false
 apply_standardize: false
 apply_normalize: true
 invariant: false
-transform: []
+transform: ["x * 3600"]

@@ -1,25 +1,23 @@
+# select.yaml
+# Defines time and spatial subsetting parameters for the dataset.
+# These are used to crop the input data temporally and spatially before processing.
+
 select:
-  # Time indexing for subsets
+  # ───── Temporal subsetting ─────
   time:
-    # Crop to the dataset with the shortest run
-    # this defines the full dataset from which to subset
+    # Define the full available date range
     range:
       start: "20001001T06:00:00"
-      end: "20010928T12:00:00"
-      # start: "2021-11-01T00:00:00"
-      # end: "2021-12-31T22:00:00"
+      end: "20001101T12:00:00"
 
-    # use this to select which years to reserve for testing
-    # and for validation
-    # the remaining years in full will be used for training
-    test_years: [2000]
-    validation_years: [2000]
-    # test_years: [None]
-    # validation_years: [None]
+    # Select years to reserve for testing and validation
+    # Remaining years are used for training
+    test_years: [None]
+    validation_years: [None]
 
-  # sets the scale factor and index slices of the rotated coordinates
+  # ───── Spatial subsetting ─────
   spatial:
-    scale_factor: 8
+    scale_factor: 8  # Factor to downscale HR data to LR
     x:
       first_index: 110
       last_index: 622

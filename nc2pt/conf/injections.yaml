@@ -1,8 +1,67 @@
+# injections.yaml
+# This file loads all climate models and their variables into a common 'internal' namespace.
+# Used by the main config to reference specific models and variables easily.
+# To add a new model or variable, add entries under the relevant section below.
+
 defaults:
-  - paths@internal
+  - paths@internal  # Makes path definitions available at internal.paths
+
+  # HR Model
   - climate_models/hr@internal._hr_model
   - climate_models/hr/uas@internal._hr_uas
+  - climate_models/hr/vas@internal._hr_vas
+  - climate_models/hr/tas@internal._hr_tas
+  - climate_models/hr/pr@internal._hr_pr
+
+  # LR Model
+  - climate_models/lr@internal._lr_model
+  - climate_models/lr/uas@internal._lr_uas
+  - climate_models/lr/vas@internal._lr_vas
+  - climate_models/lr/tas@internal._lr_tas
+  - climate_models/lr/pr@internal._lr_pr
+
+  # LR Invariant Model
+  - climate_models/lr_invariant@internal._lr_invariant_model
+
+  # HR Invariant Model
+  - climate_models/hr_invariant@internal._hr_invariant_model
+  - climate_models/hr_invariant/topo@internal._hr_invariant_topo
+
+
+  # My Model Template
+  - climate_models/my_model@internal._my_model
+  - climate_models/my_model/uas@internal._my_model_uas
+
+  # Optional: additional variables
+  # - climate_models/my_model/vas@internal._my_model_vas
+  # - climate_models/my_model/tas@internal._my_model_tas
+  # - climate_models/my_model/pr@internal._my_model_pr
 
 internal:
+  # HR aliases
   hr: ${internal._hr_model}
   hr_uas: ${internal._hr_uas}
+  hr_vas: ${internal._hr_vas}
+  hr_tas: ${internal._hr_tas}
+  hr_pr: ${internal._hr_pr}
+
+  # LR aliases
+  lr: ${internal._lr_model}
+  lr_uas: ${internal._lr_uas}
+  lr_vas: ${internal._lr_vas}
+  lr_tas: ${internal._lr_tas}
+  lr_pr: ${internal._lr_pr}
+
+  # LR Invariant aliases
+  lr_invariant: ${internal._lr_invariant_model}
+
+  # HR Invariant aliases
+  hr_invariant: ${internal._hr_invariant_model}
+  hr_invariant_topo: ${internal._hr_invariant_topo}
+
+  # My Model Template
+  my_model: ${internal._my_model}
+  my_model_uas: ${internal._my_model_uas}
+  # my_model_vas: ${internal._my_model_vas}
+  # my_model_tas: ${internal._my_model_tas}
+  # my_model_pr: ${internal._my_model_pr}

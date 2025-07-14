@@ -1,15 +1,24 @@
+# climate_models/lr.yaml
+# Defines the low-resolution ERA5 model, including metadata and its variables.
+# Add or remove variables from `climate_variables` as needed.
+# Ensure all referenced variables are injected in `injections.yaml`.
+
 _target_: nc2pt.climatedata.ClimateModel
 name: lr
 info: "Low resolution ERA5, Western Canada"
-hr_ref: # Reference field to interpolate to. Will need to provide new file if not using USask WRF
+
+# Used to interpolate LR data to HR grid. This is typically a high-res field like T2.
+hr_ref:
   _target_: nc2pt.climatedata.ClimateVariable
   name: "hr_ref"
   alternative_names: ["T2"]
-  path: ${paths.hr_ref}
+  path: ${internal.paths.hr_ref}
   is_west_negative: true
   invariant: true
+
 climate_variables:
-  - ${climate_models.lr.variables.uas}
-  #- ${climate_models.lr.variables.vas}
-  #- ${climate_models.lr.variables.pr}
-  #- ${climate_models.lr.variables.tas}
+  # Activate variables to include in the LR model
+  #- ${internal.lr_uas}
+  #- ${internal.lr_vas}
+  #- ${internal.lr_tas}
+  - ${internal.lr_pr}

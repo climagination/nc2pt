@@ -1,182 +1,27 @@
-# If the variables are the same, but are named differently in
-# the netCDF files, use the yaml key as the "homogenizing" key, and
-# list the alternative name in "alternative_names".
-# This pipeline will rename the alternative name to the yaml key if found.
-# E.g. if the lr and hr datasets have different
-# numbers of covariates, e.g. Annau et al. 2023, then
-# you can specify if a variable only occurs in the hr or lr
-# dataset respectively with hr_only or lr_only: true
-# The same logic above applies for the dimensions, dims, and coordinates, coords.
-
-# This defines the pipeline and parameters. Each config defined by a
-# _target_ is loaded as a dataclass in climatedata.py with some inheritance.
+# config.yaml
+# This is the top-level configuration for running the nc2pt pipeline.
+# It defines all inputs, models, and pipeline behaviour using Hydra.
+#
+# Notes:
+# - Variables from different models (e.g. HR vs LR) can be aligned using `alternative_names`
+# - Dimensions and coordinates can be flagged as hr_only/lr_only to apply selectively
+# - Each `_target_` maps to a dataclass in `climatedata.py`, which defines how the config is instantiated
 
 defaults:
-  - injections           # injects internal.hr, internal.lr, etc.
-  - _self_               # allow overrides below
-  - dims                 # dimension definitions (e.g., time, rlat)
-  - coords               # coordinate definitions (e.g., lat, lon)
-  - select               # spatial and temporal subsetting
-  - compute              # engine + chunking options
-  - loader               # batch size, seed, etc.
+  - injections           # Loads all climate models/variables into `internal`
+  - _self_               # Allow config.yaml to override earlier defaults
+  - dims                 # Time and spatial dimension definitions
+  - coords               # Coordinate dimension definitions
+  - select               # Spatial and temporal subsetting
+  - compute              # Engine and chunking options
+  - loader               # Loader config (batch size, shuffling, etc.)
 
 _target_: nc2pt.climatedata.ClimateData
 output_path: /home/sbeairsto/data-sbeairsto/config_test
 
-# List models to process (injected in `injections.yaml`)
+# Define the list of climate models to include (injected in `injections.yaml`)
 climate_models:
-  - ${internal.hr}
-  # - ${internal.lr}  # add when ready
-
-# climate_models:
-#   - _target_: nc2pt.climatedata.ClimateModel
-#     name: hr
-#     info: "High Resolution USask WRF, Western Canada"
-#     climate_variables: # Provides a list of ClimateVariable dataclass objects to initialize
-#       - _target_: nc2pt.climatedata.ClimateVariable
-#         name: "pr"
-#         alternative_names: ["PREC"]
-#         path:  /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/PREC/*.nc
-#         is_west_negative: true
-#         apply_standardize: false
-#         apply_normalize: true
-#         invariant: false
-#         transform: []
-
-#       # - _target_: nc2pt.climatedata.ClimateVariable
-#       #   name: "uas"
-#       #   alternative_names: ["U10", "u10", "uas"]
-#       #   path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
-#       #   is_west_negative: true
-#       #   apply_standardize: false
-#       #   apply_normalize: true
-#       #   invariant: false
-#       #   transform: []
-
-#       # - _target_: nc2pt.climatedata.ClimateVariable
-#       #   name: "vas"
-#       #   alternative_names: ["V10", "v10", "vas"]
-#       #   path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/V10/*.nc
-#       #   is_west_negative: true
-#       #   apply_standardize: false
-#       #   apply_normalize: true
-#       #   invariant: false
-#       #   transform: []        
-
-#       # - _target_: nc2pt.climatedata.ClimateVariable
-#       #   name: "RH"
-#       #   alternative_names: ["rh", "RH", "relative humidity"]
-#       #   path: /path/to/my/WRF/relative_humidity/*.nc
-#       #   is_west_negative: true
-#       #   apply_standardize: false
-#       #   apply_normalize: true
-#       #   invariant: false
-#       #   transform: []
-
-#       # - _target_: nc2pt.climatedata.ClimateVariable
-#       #   name: "tas"
-#       #   alternative_names: ["T2", "surface temperature"]
-#       #   path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/T2/*.nc
-#       #   is_west_negative: true
-#       #   apply_standardize: false
-#       #   apply_normalize: true
-#       #   invariant: false
-#       #   transform: []
-  
-
-#   - _target_: nc2pt.climatedata.ClimateModel
-#     info: "Low resolution ERA5, Western Canada"
-#     name: lr
-#     hr_ref: # Reference field to interpolate to. Will need to provide new file if not using USask WRF
-#       _target_: nc2pt.climatedata.ClimateVariable
-#       name: "hr_ref"
-#       alternative_names: ["T2"]
-#       path: /home/username/projects/nc2pt/nc2pt/data/hr_ref.nc
-#       is_west_negative: true
-#       invariant: true
-
-#     climate_variables:
-#         - _target_: nc2pt.climatedata.ClimateVariable
-#           name: "uas"
-#           alternative_names: ["U10", "u10", "uas"]
-#           path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
-#           is_west_negative: false
-#           apply_standardize: false
-#           apply_normalize: true
-#           invariant: false
-#           transform: []
-  
-#   #       - _target_: nc2pt.climatedata.ClimateVariable
-#   #         name: "pr"
-#   #         alternative_names: ["PREC"]
-#   #         path: '/net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/pr_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc'
-#   #         is_west_negative: false
-#   #         apply_standardize: false
-#   #         apply_normalize: true
-#   #         invariant: false
-#   #         transform: ["x * 3600"]
-#   #           - "x * 3600"
-
-#   # # for some reason, the way RH was written to file requires time chunks be explicitly defined in io.py.
-#   # # Other files will process fine, don't know what to do about this problem...
-#   #       - _target_: nc2pt.climatedata.ClimateVariable
-#   #         name: "RH"
-#   #         alternative_names: ["rh", "huss", "Q2", "q2"]
-#   #         path: path/to/my/ERA5/relative_humidity/RH.nc
-#   #         is_west_negative: false
-#   #         apply_standardize: false
-#   #         apply_normalize: true
-#   #         invariant: false
-#   #         transform: []
-
-#   #       - _target_: nc2pt.climatedata.ClimateVariable
-#   #         name: "vas"
-#   #         alternative_names: ["V10", "v10", "vas"]
-#   #         path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/vas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
-#   #         apply_standardize: false
-#   #         apply_normalize: true
-#   #         invariant: false
-#   #         transform: []
-
-#   #       - _target_: nc2pt.climatedata.ClimateVariable
-#   #         name: "tas"
-#   #         alternative_names: ["T2", "surface temperature"]
-#   #         path: '/net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc'
-#   #         is_west_negative: false
-#   #         apply_standardize: false
-#   #         apply_normalize: true
-#   #         invariant: false
-#   #         transform: []
-#   #             - "x - 273.15"
-
-
-#   - _target_: nc2pt.climatedata.ClimateModel
-#     name: hr_invariant
-#     info: "HR static invariant fields for WRF domain"
-#     engine: netcdf4
-#     climate_variables:
-#       - _target_: nc2pt.climatedata.ClimateVariable
-#         name: "topography"
-#         alternative_names: ["HGT"]
-#         path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
-#         is_west_negative: false
-#         invariant: true
-#         apply_standardize: false
-#         apply_normalize: true
-#         transform: []
-
-#   - _target_: nc2pt.climatedata.ClimateModel
-#     name: lr_invariant
-#     info: "HR static invariant fields for WRF domain to be downsampled to LR"
-#     engine: netcdf4
-#     downsample: true
-#     climate_variables:
-#       - _target_: nc2pt.climatedata.ClimateVariable
-#         name: "topography"
-#         alternative_names: ["HGT"]
-#         path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
-#         is_west_negative: false
-#         invariant: true
-#         apply_standardize: false
-#         apply_normalize: true
-#         transform: []
+  #- ${internal.hr}
+  #- ${internal.lr}  # Uncomment to include low-resolution model
+  - ${internal.lr_invariant}
+  - ${internal.hr_invariant}

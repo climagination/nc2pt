@@ -1,0 +1,12 @@
+# climate_models/lr_invariant.yaml
+# High-resolution invariant fields that will be downsampled to match LR grid.
+# Useful for adding topographic detail to LR inputs during downscaling.
+
+_target_: nc2pt.climatedata.ClimateModel
+name: lr_invariant
+info: "HR static invariant fields for WRF domain to be downsampled to LR"
+engine: netcdf4
+downsample: true
+
+climate_variables:
+  - ${internal.hr_invariant_topo}

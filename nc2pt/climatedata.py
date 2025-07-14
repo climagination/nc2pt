@@ -14,7 +14,6 @@ class ClimateDimension:
 
 @dataclass
 class ClimateVariable:
-    package: str
     name: str
     alternative_names: List[str]
     path: str
@@ -36,9 +35,6 @@ class ClimateModel:
     hr_ref: Optional[ClimateVariable] = None
     engine: Optional[str] = None  # Optional engine override for this model
     downsample: Optional[bool] = False  # Optional downsampling for invariant fields
-
-    def __post_init__(self):
-        logging.info(f"🌎 Instantiated Model with information: {self.info}")
 
 
 @dataclass
@@ -75,3 +71,8 @@ class ClimateData:
         else:
             logging.warning("No matching dimensions found for chunking.")
             return ds
+
+
+    def __post_init__(self):
+        for model in self.climate_models:
+            logging.info(f"🌎 Instantiated Model with information: {model.info}")
