@@ -80,125 +80,107 @@ The most obvious downside is that you lose the metadata associated with a netCDF
 
 That’s it!
 
+
 ### 📋 Configuration
-nc2pt uses [hydra](https://hydra.cc/) for configuring and by instantiating structured classes in `nc2pt/climatedata.py`. This simeultaneously defines the workflow as well as the data. Please see `nc2pt/conf/config.yml` for an example configuration, or below:
 
-```yaml
-_target_: nc2pt.climatedata.ClimateData # Iniatlizes ClimateData dataclass object
-output_path: /home/sbeairsto/data-sbeairsto/test_data
-climate_models:
-  - _target_: nc2pt.climatedata.ClimateModel
-    name: hr
-    info: "High Resolution USask WRF, Western Canada"
-    climate_variables: # Provides a list of ClimateVariable dataclass objects to initialize
+`nc2pt` uses [Hydra](https://hydra.cc/) for flexible configuration. The main configuration file is `conf/config.yaml`, which defines:
 
-       - _target_: nc2pt.climatedata.ClimateVariable
-         name: "uas"
-         alternative_names: ["U10", "u10", "uas"]
-         path: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
-         is_west_negative: true
-         apply_standardize: false
-         apply_normalize: true
-         invariant: false
-         transform: []
-  
+-   The list of climate models to include (`climate_models`)
+    
+-   Global dimensions, coordinates, subsetting, and chunking
+    
+-   Output path and compute options
+    
 
-  - _target_: nc2pt.climatedata.ClimateModel
-    info: "Low resolution ERA5, Western Canada"
-    name: lr
-    hr_ref: # Reference field to interpolate to. Will need to provide new file if not using USask WRF
-      _target_: nc2pt.climatedata.ClimateVariable
-      name: "hr_ref"
-      alternative_names: ["T2"]
-      path: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
-      is_west_negative: true
-      invariant: true
+Each model and variable is defined in separate YAML files under `conf/climate_models/`, making the pipeline modular and easily extensible.
 
+----------
+
+### ➕ Adding a New Climate Model
+
+To add a new model:
+
+1.  **Create a model file**  
+    Place it at `conf/climate_models/<name>/model.yaml`. Example:
+    
+    ```yaml
+    _target_:  nc2pt.climatedata.ClimateModel
+    name:  my_model
+    info:  "My custom climate model"
     climate_variables:
-       - _target_: nc2pt.climatedata.ClimateVariable
-         name: "uas"
-         alternative_names: ["U10", "u10", "uas"]
-         path: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
-         is_west_negative: false
-         apply_standardize: false
-         apply_normalize: true
-         invariant: false
-         transform: []
+	    -  ${internal.my_model_pr}
+	    -  ${internal.my_model_tas}
+    ```
+    
+2.  **Register it in `injections.yaml`**
+    
+	``` yaml
+	default:
+		-  climate_models/my_model@internal._my_model  
+		-  climate_models/my_model/pr@internal._my_model_pr
+		-  climate_models/my_model/tas@internal._my_model_tas 
+	```
+	
+3.  **Expose the aliases in `injections.yaml`**
+    
+	```yaml
+	internal:
+		my_model:  ${internal._my_model}
+		my_model_pr:  ${internal._my_model_pr}
+		my_model_tas:  ${internal._my_model_tas} 
+	 ``` 
+4.  **Enable it in `config.yaml`**
+    
+	   ``` yaml
+	  climate_models:
+		  -  ${internal.my_model}
+	  ```
+    
 
+----------
 
-dims: # Defines the dimensions of the dataset and lists them to be initialized as ClimateDimension objects
-  - _target_: nc2pt.climatedata.ClimateDimension
-    name: time
-    alternative_names: ["forecast_initial_time", "Time", "Times", "times"]
-    chunksize: 100
-  - _target_: nc2pt.climatedata.ClimateDimension
-    name: rlat
-    alternative_names: ["rotated_latitude"]
-    hr_only: true
-    chunksize: -1
-  - _target_: nc2pt.climatedata.ClimateDimension
-    name: rlon
-    alternative_names: ["rotated_longitude"]
-    hr_only: true
-    chunksize: -1
+### ➕ Adding a New Climate Variable
 
-coords:
-  - _target_: nc2pt.climatedata.ClimateDimension
-    name: lat
-    alternative_names: ["latitude", "Lat", "Latitude"]
-    chunksize: -1
-  - _target_: nc2pt.climatedata.ClimateDimension
-    name: lon
-    alternative_names: ["longitude", "Long", "Lon", "Longitude"]
-    chunksize: -1
+To add a new variable to an existing model (e.g., `hr`):
 
-select:
-  # Time indexing for subsets
-  time:
-    # Crop to the dataset with the shortest run
-    # this defines the full dataset from which to subset
-    range:
-      start: "20001001T06:00:00"
-      end: "20150928T12:00:00"
+1.  **Create a variable file**  
+    Place it at `conf/climate_models/hr/zg.yaml`:
+    
+	   ``` yaml
+	    _target_:  nc2pt.climatedata.ClimateVariable
+	    name:  "zg"
+	    alternative_names: ["zg"]
+	    path:  ${internal.paths.hr.zg}
+	    apply_standardize:  true
+	    apply_normalize:  true
+	    invariant:  false
+	 ```
+    
+2.  **Register and alias it in `injections.yaml`**
+    
+	``` yaml
+	defaults:
+		- climate_models/hr/zg@internal._hr_zg
+	internal:
+		hr_zg:  ${internal._hr_zg}
+	```
 
-    # use this to select which years to reserve for testing
-    # and for validation
-    # the remaining years in full will be used for training
-    test_years: [2000, 2009, 2014]
-    validation_years: [2015]
+3.  **Add it to the model’s variable list**  
+    In `conf/climate_models/hr/model.yaml`:
+    
+	   ``` yaml
+	    climate_variables:
+		    -  ${internal.hr_zg}  # other variables...
+	  ```
+    
 
-  # sets the scale factor and index slices of the rotated coordinates
-  spatial:
-    scale_factor: 8
-    x:
-      first_index: 110
-      last_index: 622
-    y:
-      first_index: 20
-      last_index: 532
-
-
-
-# dask client parameters
-compute:
-  # xarray netcdf engine
-  engine: h5netcdf
-  dask_dashboard_address: 8787
-  chunks:
-    time: 100
-    rlat: -1
-    rlon: -1
-
-# for tools scripts
-loader:
-  batch_size: 4
-  randomize: true
-  seed: 0
-```
+That’s it — your new model or variable will now be included in the pipeline when `preprocess.py` is run.
 
 ### 🚀 Running
 1. Explore data and ensure compatibility
-2. Configure `nc2pt/conf/config.yaml`
+2. **Set up your configuration**:
+-   Edit `conf/config.yaml` to include the models you want to use under `climate_models:`   
+-   For each model, go to its `model.yaml` file and uncomment (or add) the variables you want included
 3. Run the `nc2pt/preprocess.py` script which will run through your preprocessing steps. This creates the zarr files
 4. Run the `nc2pt/tools/zarr_to_torch.py` script which serializes each time step in the `.zarr` file to an individual PyTorch `.pt` file.
 5. Optional: run the `nc2pt/tools/single_files_to_batches.py` which combines individual files from the previous step into random batches. This setup allows for less io in your machine learning pipeline.
