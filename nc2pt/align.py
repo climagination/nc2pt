@@ -262,6 +262,25 @@ def apply_temporal_crop(ds: xr.DataArray,
                         model: ClimateModel,
                         climdata: ClimateData,
                         hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Crop the dataset to the configured start and end times.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset.
+    model : ClimateModel
+        The climate model configuration.
+    climdata : ClimateData
+        Global configuration object with time selection settings.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    xr.DataArray
+        Time-cropped dataset.
+    """
     start = climdata.select.time.range.start
     end = climdata.select.time.range.end
     ds = slice_time(ds, start, end)
@@ -272,14 +291,38 @@ def apply_regrid(ds: xr.DataArray,
                  model: ClimateModel,
                  climdata: ClimateData,
                  hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Regrid the dataset to match a high-resolution reference field.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to regrid.
+    model : ClimateModel
+        The climate model configuration.
+    climdata : ClimateData
+        Global configuration object.
+    hr_ref : xr.DataArray
+        High-resolution reference dataset.
+
+    Returns
+    -------
+    xr.DataArray
+        Regridded dataset.
+
+    Raises
+    ------
+    ValueError
+        If no hr_ref is provided in the model configuration.
+    """
     logging.info("🚀 Regridding and interpolating...")
 
     if hr_ref is None:
         raise ValueError(
-                f"Cannot perform 'regrid' step for model '{model.name}': "
-                f"'hr_ref' (the high-resolution reference field) is not defined.\n"
-                f"To enable regridding, add an 'hr_ref' field to the model YAML."
-                )
+            f"Cannot perform 'regrid' step for model '{model.name}': "
+            f"'hr_ref' (the high-resolution reference field) is not defined.\n"
+            f"To enable regridding, add an 'hr_ref' field to the model YAML."
+        )
     ds = interpolate(ds, hr_ref)
     return ds
 
@@ -288,6 +331,25 @@ def apply_spatial_crop(ds: xr.DataArray,
                        model: ClimateModel,
                        climdata: ClimateData,
                        hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Crop the dataset spatially to configured x/y index bounds.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to crop.
+    model : ClimateModel
+        The climate model configuration.
+    climdata : ClimateData
+        Global configuration containing crop index bounds.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    xr.DataArray
+        Cropped dataset.
+    """
     scale_factor = climdata.select.spatial.scale_factor
     x_range = climdata.select.spatial.x
     y_range = climdata.select.spatial.y
@@ -300,6 +362,25 @@ def apply_coarsen(ds: xr.DataArray,
                   model: ClimateModel,
                   climdata: ClimateData,
                   hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Coarsen the dataset spatially by a configured scale factor.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to coarsen.
+    model : ClimateModel
+        The climate model configuration.
+    climdata : ClimateData
+        Global configuration containing coarsening parameters.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    xr.DataArray
+        Coarsened dataset.
+    """
     scale_factor = climdata.select.spatial.scale_factor
     coarsen_lr(ds, scale_factor)
     logging.info(f"🪛  Coarsened field by a factor of {scale_factor}")
@@ -309,12 +390,30 @@ def apply_coarsen(ds: xr.DataArray,
 def apply_data_split(ds: xr.DataArray,
                      model: ClimateModel,
                      climdata: ClimateData,
-                     hr_ref: xr.DataArray) -> xr.DataArray:
+                     hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
+    """
+    Split the dataset into training, validation, and test sets based on years.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to split.
+    model : ClimateModel
+        The climate model configuration.
+    climdata : ClimateData
+        Global configuration containing year splits.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    dict[str, xr.DataArray]
+        Dictionary containing split datasets keyed by "train", "test", and "validation".
+    """
     test_years = climdata.select.time.test_years
     validation_years = climdata.select.time.validation_years
     full_ds = train_test_split(ds, test_years, validation_years)
     logging.info(f"🪓  Split dataset into test years: {test_years}, validation years: {validation_years}, and training years (remainder)")
-
     return full_ds
 
 
@@ -322,19 +421,38 @@ def run_alignment_pipeline(ds: xr.DataArray,
                            model: ClimateModel,
                            climdata: ClimateData,
                            hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
+    """
+    Execute the alignment pipeline for a given climate model.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        Input dataset to process.
+    model : ClimateModel
+        Climate model containing the alignment pipeline steps.
+    climdata : ClimateData
+        Global configuration for the preprocessing run.
+    hr_ref : xr.DataArray
+        Optional high-resolution reference field for regridding.
+
+    Returns
+    -------
+    dict[str, xr.DataArray]
+        Processed dataset(s), returned as a dictionary.
+        If no split is performed, a single entry with key "full" is returned.
+
+    Raises
+    ------
+    ValueError
+        If an unknown step is found in the model's pipeline.
+    """
     for step in model.alignment_pipeline:
         if step not in alignment_steps:
             raise ValueError(f"Unknown alignment step '{step}' in model '{model.name}'")
         ds = alignment_steps[step](ds, model, climdata, hr_ref)
-    
-    # ensure that the output of this function is a dict, even if the dataset
-    # has not been split
+
     if not isinstance(ds, dict):
-        ds = {
-            "full": ds
-        }
-
-
+        ds = {"full": ds}
     return ds
 
 
