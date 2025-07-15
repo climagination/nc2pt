@@ -1,6 +1,6 @@
 from nc2pt.metadata import configure_metadata, NormalizerMetadataCollector
 from nc2pt.io import load_grid, write_to_zarr
-from nc2pt.align import align_with_lr, crop_field, slice_time
+from nc2pt.align import align_with_lr, crop_field, slice_time, run_alignment_pipeline
 from nc2pt.computations import split_and_standardize, standardize_or_normalize
 from nc2pt.climatedata import ClimateData, ClimateModel
 
@@ -39,6 +39,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
             "lr": partial(align_with_lr, hr_ref=hr_ref, climdata=climdata),
             "lr_invariant": partial(align_with_lr, hr_ref=hr_ref, climdata=climdata),
         }
+    else: hr_ref = None
 
     for climate_variable in model.climate_variables:
         # Instantiates climate_variable object in cliamtedata.py
@@ -55,67 +56,68 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         ds = configure_metadata_fn(ds, climate_variable)
         metadata_collector.log_variable_units_from_dataset(climate_variable.name, ds)
         ds = climdata.apply_chunks(ds)
+        ds = run_alignment_pipeline(ds, model, climdata, hr_ref)
 
-        ds = (
-            slice_time(
-                ds, climdata.select.time.range.start, climdata.select.time.range.end
-            )
-            if climate_variable.invariant is False
-            else ds
-        )
+        # ds = (
+        #     slice_time(
+        #         ds, climdata.select.time.range.start, climdata.select.time.range.end
+        #     )
+        #     if climate_variable.invariant is False
+        #     else ds
+        # )
 
-        alignment_procedures |= {
-            "hr": partial(
-                crop_field,
-                scale_factor=climdata.select.spatial.scale_factor,
-                x=climdata.select.spatial.x,
-                y=climdata.select.spatial.y,
-            ),
-            "hr_invariant": partial(
-                crop_field,
-                scale_factor=climdata.select.spatial.scale_factor,
-                x=climdata.select.spatial.x,
-                y=climdata.select.spatial.y,
-            ),
-            "lr_invariant": partial(
-                crop_field,
-                scale_factor=climdata.select.spatial.scale_factor,
-                x=climdata.select.spatial.x,
-                y=climdata.select.spatial.y,
-                downsample=getattr(model, "downsample", False),
-            ),
-        }
+        # alignment_procedures |= {
+        #     "hr": partial(
+        #         crop_field,
+        #         scale_factor=climdata.select.spatial.scale_factor,
+        #         x=climdata.select.spatial.x,
+        #         y=climdata.select.spatial.y,
+        #     ),
+        #     "hr_invariant": partial(
+        #         crop_field,
+        #         scale_factor=climdata.select.spatial.scale_factor,
+        #         x=climdata.select.spatial.x,
+        #         y=climdata.select.spatial.y,
+        #     ),
+        #     "lr_invariant": partial(
+        #         crop_field,
+        #         scale_factor=climdata.select.spatial.scale_factor,
+        #         x=climdata.select.spatial.x,
+        #         y=climdata.select.spatial.y,
+        #         downsample=getattr(model, "downsample", False),
+        #     ),
+        # }
 
-        # This implies that it is a different grid or a lr dataset.
-        ds = alignment_procedures[model.name](ds)
-        if climate_variable.invariant is False:
-            train_test_validation_ds = split_and_standardize(
-                ds, climdata, climate_variable
-            )
-            metadata_collector.add_variable_from_config(climate_data=climdata,
-                                                        climate_variable=climate_variable,
-                                                        processed_ds=train_test_validation_ds["train"],
-                                                        model_name=model.name)
-            for train_test_validation in train_test_validation_ds:
-                logging.info(f"✨ Writing {train_test_validation} output...")
-                write_to_zarr(
-                    climdata.apply_chunks(train_test_validation_ds[train_test_validation]),
-                    f"{climdata.output_path}/{climate_variable.name}_{train_test_validation}_{model.name}",
-                )
+        # # This implies that it is a different grid or a lr dataset.
+        # ds = alignment_procedures[model.name](ds)
+        # if climate_variable.invariant is False:
+        #     train_test_validation_ds = split_and_standardize(
+        #         ds, climdata, climate_variable
+        #     )
+        #     metadata_collector.add_variable_from_config(climate_data=climdata,
+        #                                                 climate_variable=climate_variable,
+        #                                                 processed_ds=train_test_validation_ds["train"],
+        #                                                 model_name=model.name)
+        #     for train_test_validation in train_test_validation_ds:
+        #         logging.info(f"✨ Writing {train_test_validation} output...")
+        #         write_to_zarr(
+        #             climdata.apply_chunks(train_test_validation_ds[train_test_validation]),
+        #             f"{climdata.output_path}/{climate_variable.name}_{train_test_validation}_{model.name}",
+        #         )
 
-        else:
-            ds = standardize_or_normalize(ds, climate_variable)
-            logging.info("✨ Writing output...")
-            write_to_zarr(
-                climdata.apply_chunks(ds),
-                f"{climdata.output_path}/{climate_variable.name}_{model.name}",
-            )
+        # else:
+        #     ds = standardize_or_normalize(ds, climate_variable)
+        #     logging.info("✨ Writing output...")
+        #     write_to_zarr(
+        #         climdata.apply_chunks(ds),
+        #         f"{climdata.output_path}/{climate_variable.name}_{model.name}",
+        #     )
 
-        end = timer()
-        logging.info(f"🎉 Done processing {climate_variable.name} in {model.info}!")
-        logging.info(f"⏳ Time elapsed ⏳: {timedelta(seconds=end-start)}")
-        del ds
-    metadata_collector.write_all()
+        # end = timer()
+        # logging.info(f"🎉 Done processing {climate_variable.name} in {model.info}!")
+        # logging.info(f"⏳ Time elapsed ⏳: {timedelta(seconds=end-start)}")
+        # del ds
+    #metadata_collector.write_all()
 
 
 def preprocess(climdata: ClimateData) -> None:

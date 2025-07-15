@@ -1,10 +1,10 @@
 import logging
-from typing import Dict
+from typing import Dict, Callable
 
 import pandas as pd
 import xarray as xr
 
-from nc2pt.climatedata import ClimateData
+from nc2pt.climatedata import ClimateData, ClimateModel
 import omegaconf
 
 
@@ -41,6 +41,7 @@ def slice_time(ds: xr.Dataset, start: str, end: str) -> xr.Dataset:
         raise ValueError("End date is after the dataset ends.")
 
     ds = ds.sel(time=slice(start, end), drop=True)
+    logging.info(f"🕜 Cropped dataset temporally from {start} to {end}")
 
     return ds
 
@@ -88,7 +89,7 @@ def train_test_split(
     return {"train": train, "test": test, "validation": validation}
 
 
-def crop_field(ds, scale_factor, x, y, downsample=False):
+def crop_field(ds: xr.DataArray, scale_factor: int, x: dict, y: dict, downsample=False) -> xr.DataArray:
     """Crop the field to the given size.
 
     Parameters
@@ -127,10 +128,10 @@ def crop_field(ds, scale_factor, x, y, downsample=False):
         ds.rlon.size == ds.rlat.size
     ), "rlon and rlat not the same size, check dataset"
 
-    if downsample:
-        # Optional coarsen for low resolution invariant fields.
-        logging.info("🌎 Coarsening HR invariant to become LR invariant...")
-        ds = coarsen_lr(ds, scale_factor)
+    # if downsample:
+    #     # Optional coarsen for low resolution invariant fields.
+    #     logging.info("🌎 Coarsening HR invariant to become LR invariant...")
+    #     ds = coarsen_lr(ds, scale_factor)
 
     return ds
 
@@ -236,7 +237,7 @@ def align_with_lr(ds, hr_ref, climdata) -> xr.Dataset:
     return ds
 
 
-def coarsen_lr(ds, scale_factor):
+def coarsen_lr(ds: xr.DataArray, scale_factor: int) -> xr.DataArray:
     """Coarsen the low resolution dataset.
 
     Parameters
@@ -255,3 +256,92 @@ def coarsen_lr(ds, scale_factor):
     ds = ds.coarsen(rlon=scale_factor, rlat=scale_factor).mean()
 
     return ds
+
+
+def apply_temporal_crop(ds: xr.DataArray,
+                        model: ClimateModel,
+                        climdata: ClimateData,
+                        hr_ref: xr.DataArray) -> xr.DataArray:
+    start = climdata.select.time.range.start
+    end = climdata.select.time.range.end
+    ds = slice_time(ds, start, end)
+    return ds
+
+
+def apply_regrid(ds: xr.DataArray,
+                 model: ClimateModel,
+                 climdata: ClimateData,
+                 hr_ref: xr.DataArray) -> xr.DataArray:
+    logging.info("🚀 Regridding and interpolating...")
+
+    if hr_ref is None:
+        raise ValueError(
+                f"Cannot perform 'regrid' step for model '{model.name}': "
+                f"'hr_ref' (the high-resolution reference field) is not defined.\n"
+                f"To enable regridding, add an 'hr_ref' field to the model YAML."
+                )
+    ds = interpolate(ds, hr_ref)
+    return ds
+
+
+def apply_spatial_crop(ds: xr.DataArray,
+                       model: ClimateModel,
+                       climdata: ClimateData,
+                       hr_ref: xr.DataArray) -> xr.DataArray:
+    scale_factor = climdata.select.spatial.scale_factor
+    x_range = climdata.select.spatial.x
+    y_range = climdata.select.spatial.y
+    ds = crop_field(ds, scale_factor, x_range, y_range)
+    logging.info(f"🌎 Cropped field to x:[{x_range.first_index},{x_range.last_index}] and y:[{y_range.first_index}, {y_range.last_index}]")
+    return ds
+
+
+def apply_coarsen(ds: xr.DataArray,
+                  model: ClimateModel,
+                  climdata: ClimateData,
+                  hr_ref: xr.DataArray) -> xr.DataArray:
+    scale_factor = climdata.select.spatial.scale_factor
+    coarsen_lr(ds, scale_factor)
+    logging.info(f"🪛  Coarsened field by a factor of {scale_factor}")
+    return ds
+
+
+def apply_data_split(ds: xr.DataArray,
+                     model: ClimateModel,
+                     climdata: ClimateData,
+                     hr_ref: xr.DataArray) -> xr.DataArray:
+    test_years = climdata.select.time.test_years
+    validation_years = climdata.select.time.validation_years
+    full_ds = train_test_split(ds, test_years, validation_years)
+    logging.info(f"🪓  Split dataset into test years: {test_years}, validation years: {validation_years}, and training years (remainder)")
+
+    return full_ds
+
+
+def run_alignment_pipeline(ds: xr.DataArray,
+                           model: ClimateModel,
+                           climdata: ClimateData,
+                           hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
+    for step in model.alignment_pipeline:
+        if step not in alignment_steps:
+            raise ValueError(f"Unknown alignment step '{step}' in model '{model.name}'")
+        ds = alignment_steps[step](ds, model, climdata, hr_ref)
+    
+    # ensure that the output of this function is a dict, even if the dataset
+    # has not been split
+    if not isinstance(ds, dict):
+        ds = {
+            "full": ds
+        }
+
+
+    return ds
+
+
+alignment_steps: dict[str, Callable] = {
+    "temporal_crop": apply_temporal_crop,
+    "regrid": apply_regrid,
+    "spatial_crop": apply_spatial_crop,
+    "coarsen": apply_coarsen,
+    "split_data": apply_data_split,
+}

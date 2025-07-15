@@ -8,11 +8,11 @@ select:
     # Define the full available date range
     range:
       start: "20001001T06:00:00"
-      end: "20001101T12:00:00"
+      end: "20010101T12:00:00"
 
     # Select years to reserve for testing and validation
     # Remaining years are used for training
-    test_years: [None]
+    test_years: [2001]
     validation_years: [None]
 
   # ───── Spatial subsetting ─────

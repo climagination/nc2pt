@@ -35,6 +35,9 @@ class ClimateModel:
     hr_ref: Optional[ClimateVariable] = None
     engine: Optional[str] = None  # Optional engine override for this model
     downsample: Optional[bool] = False  # Optional downsampling for invariant fields
+    alignment_pipeline: List[str] = field(default_factory=lambda: [
+        "temporal_crop", "regrid", "spatial_crop", "coarsen", "split_data"
+    ])
 
 
 @dataclass
