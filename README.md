@@ -36,10 +36,37 @@ High-level workflow
 2. slices data to a pre-determined range of dates
 3. aligns the grids via interpolation, crops them to be the same size, and coarsens the low-resolution fields by the configured scale factor
 4. applies user defined transforms like unit conversions or log transformations
-5. splits into a train and test dataset and standardizes both datasets based on the mean and standard deviation of all grids from the training data only (also writes this information into the zarr metadata for inference)
-6. writes to `.zarr`
-7. `nc2pt/tools/zarr_to_torch.py` - writes to PyTorch files
-8. `nc2pt/tools/single_file_to_batches.py` - batches the single PyTorch files
+5. optionally splits into train/test/validation based on years defined in the config
+6. standardizes/normalizes the datasets based on statistics computed from the training data (or full data, if no split). These statistics are stored in the metadata.
+7. writes to `.zarr`
+8. `nc2pt/tools/zarr_to_torch.py` - writes to PyTorch files
+9. `nc2pt/tools/single_file_to_batches.py` - batches the single PyTorch files
+
+## Customizable Pipelines 🚦
+
+Each model can define its own custom preprocessing steps by listing them in order via the `alignment_pipeline` field of the model YAML. Steps include:
+
+-   `temporal_crop`
+    
+-   `regrid`
+    
+-   `spatial_crop`
+    
+-   `coarsen`
+
+-   `user_defined_transforms`
+    
+-   `data_split`
+    
+
+By default, all 6 are applied. You can exclude or reorder them by editing the YAML, e.g.:
+
+```
+alignment_pipeline:
+  - temporal_crop
+  - regrid
+  - spatial_crop
+```
 
 ## What are the downsides of using PyTorch files for climate data?
 The most obvious downside is that you lose the metadata associated with a netCDF dataset. The intermediate Zarr format produced by nc2pt allows for parallelized io and perserves the metadata. This is useful for inference. 
@@ -107,6 +134,13 @@ To add a new model:
     _target_:  nc2pt.climatedata.ClimateModel
     name:  my_model
     info:  "My custom climate model"
+	alignment_pipeline:
+      - temporal_crop
+      - regrid
+      - spatial_crop
+      - coarsen
+	  - user_defined_transforms
+      - data_split
     climate_variables:
 	    -  ${internal.my_model_pr}
 	    -  ${internal.my_model_tas}
@@ -154,6 +188,7 @@ To add a new variable to an existing model (e.g., `hr`):
 	    apply_standardize:  true
 	    apply_normalize:  true
 	    invariant:  false
+		transform: ["x * 69 + 420"]
 	 ```
     
 2.  **Register and alias it in `injections.yaml`**
