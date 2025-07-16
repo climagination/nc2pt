@@ -1,7 +1,7 @@
 from nc2pt.metadata import configure_metadata, NormalizerMetadataCollector
 from nc2pt.io import load_grid, write_to_zarr
-from nc2pt.align import align_with_lr, crop_field, slice_time, run_alignment_pipeline
-from nc2pt.computations import split_and_standardize, standardize_or_normalize
+from nc2pt.align import align_with_lr, crop_field, slice_time, run_alignment_pipeline, apply_feature_scaling
+#from nc2pt.computations import split_and_standardize, standardize_or_normalize
 from nc2pt.climatedata import ClimateData, ClimateModel
 
 import logging
@@ -56,7 +56,23 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         ds = configure_metadata_fn(ds, climate_variable)
         metadata_collector.log_variable_units_from_dataset(climate_variable.name, ds)
         ds = climdata.apply_chunks(ds)
-        ds = run_alignment_pipeline(ds, model, climdata, hr_ref)
+        ds_aligned = run_alignment_pipeline(ds, model, climdata, hr_ref)
+        ds_aligned = apply_feature_scaling(ds_aligned, climate_variable)
+
+        for dataset in ds_aligned:
+            # metadata_collector.add_variable_from_config(climate_data=climdata,
+            #                                             climate_variable=climate_variable,
+            #                                             processed_ds=["train"],
+            #                                             model_name=model.name)
+            write_to_zarr(
+                    climdata.apply_chunks(ds_aligned[dataset]),
+                    f"{climdata.output_path}/{climate_variable.name}_{dataset}_{model.name}",
+                )
+        end = timer()
+        logging.info(f"🎉 Done processing {climate_variable.name} in {model.info}!")
+        logging.info(f"⏳ Time elapsed ⏳: {timedelta(seconds=end-start)}")
+        del ds
+    metadata_collector.write_all()
 
         # ds = (
         #     slice_time(

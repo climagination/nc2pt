@@ -1,7 +1,7 @@
 import logging
 import xarray as xr
 import numpy as np  # noqa: F401
-from nc2pt.align import train_test_split
+#from nc2pt.align import train_test_split
 from nc2pt.climatedata import ClimateVariable
 
 
@@ -152,44 +152,44 @@ def compute_standardization(
     return ds
 
 
-def split_and_standardize(ds, climdata, var) -> dict:
-    # Train test split
-    logging.info("Splitting dataset...")
+# def split_and_standardize(ds, climdata, var) -> dict:
+#     # Train test split
+#     logging.info("Splitting dataset...")
 
-    ds = user_defined_transform(ds, var)
+#     ds = user_defined_transform(ds, var)
 
-    train_test = train_test_split(
-        ds, climdata.select.time.test_years, climdata.select.time.validation_years
-    )
+#     train_test = train_test_split(
+#         ds, climdata.select.time.test_years, climdata.select.time.validation_years
+#     )
 
-    # Standardize the dataset.
-    if var.apply_standardize:
-        logging.info(f"Standardizing {var.name}...")
-        train = compute_standardization(train_test["train"], var.name)
-        test = compute_standardization(
-            train_test["test"], var.name, train_test["train"]
-        )
-        validation = compute_standardization(
-            train_test["validation"], var.name, train_test["train"]
-        )
+#     # Standardize the dataset.
+#     if var.apply_standardize:
+#         logging.info(f"Standardizing {var.name}...")
+#         train = compute_standardization(train_test["train"], var.name)
+#         test = compute_standardization(
+#             train_test["test"], var.name, train_test["train"]
+#         )
+#         validation = compute_standardization(
+#             train_test["validation"], var.name, train_test["train"]
+#         )
 
-    if var.apply_normalize:
-        logging.info(f"Normalizing {var.name}...")
-        train = compute_normalization(train_test["train"], var.name)
-        test = compute_normalization(train_test["test"], var.name, train_test["train"])
-        validation = compute_normalization(
-            train_test["validation"], var.name, train_test["train"]
-        )
+#     if var.apply_normalize:
+#         logging.info(f"Normalizing {var.name}...")
+#         train = compute_normalization(train_test["train"], var.name)
+#         test = compute_normalization(train_test["test"], var.name, train_test["train"])
+#         validation = compute_normalization(
+#             train_test["validation"], var.name, train_test["train"]
+#         )
 
-    if var.apply_normalize is False and var.apply_standardize is False:
-        logging.info("Skipping standardization and normalization...")
-        return {
-            "train": train_test["train"],
-            "test": train_test["test"],
-            "validation": train_test["validation"],
-        }
+#     if var.apply_normalize is False and var.apply_standardize is False:
+#         logging.info("Skipping standardization and normalization...")
+#         return {
+#             "train": train_test["train"],
+#             "test": train_test["test"],
+#             "validation": train_test["validation"],
+#         }
 
-    return {"train": train, "test": test, "validation": validation}
+#     return {"train": train, "test": test, "validation": validation}
 
 
 def standardize_or_normalize(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset:
