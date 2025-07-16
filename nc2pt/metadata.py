@@ -7,6 +7,7 @@ from hydra.utils import instantiate
 from typing import Union, List
 from nc2pt.climatedata import ClimateDimension, ClimateVariable, ClimateData
 import xarray as xr
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 
 class MultipleKeys(Exception):
@@ -52,7 +53,16 @@ class NormalizerMetadataCollector:
         Returns:
             SHA256 hash string.
         """
-        temp = {k: v for k, v in data.items() if k != "hash"}
+        # Exclude 'hash' and convert each value if needed
+        temp = {}
+        for k, v in data.items():
+            if k == "hash":
+                continue
+            if OmegaConf.is_config(v):  # Handles both DictConfig and ListConfig
+                temp[k] = OmegaConf.to_container(v, resolve=True)
+            else:
+                temp[k] = v
+
         temp_json = json.dumps(temp, sort_keys=True)
         return hashlib.sha256(temp_json.encode()).hexdigest()
 
@@ -112,6 +122,29 @@ class NormalizerMetadataCollector:
             if model.name == model_name and model.hr_ref is not None:
                 return model.hr_ref.path
         return None
+    
+    def _convert_nested_omegaconf(self, obj):
+        """
+        Recursively convert any OmegaConf DictConfig or ListConfig to plain Python dicts/lists.
+
+        Parameters
+        ----------
+        obj : Any
+            Object potentially containing OmegaConf configs.
+
+        Returns
+        -------
+        Any
+            A fully OmegaConf-free version of the input object.
+        """
+        if isinstance(obj, (DictConfig, ListConfig)):
+            return OmegaConf.to_container(obj, resolve=True)
+        elif isinstance(obj, dict):
+            return {k: self._convert_nested_omegaconf(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_nested_omegaconf(v) for v in obj]
+        else:
+            return obj
 
     def log_variable_units_from_dataset(self, variable_name: str, ds: xr.Dataset) -> None:
         """
@@ -193,11 +226,16 @@ class NormalizerMetadataCollector:
             return
 
         for var_name, meta in self.metadata.items():
+            # Add the hash first (must be added to the original dict)
             meta["hash"] = self._compute_hash(meta)
+
+            # Convert entire metadata dict to a plain dict recursively
+            meta_clean = self._convert_nested_omegaconf(meta)
+
             out_path = self.output_dir / f"{var_name}_normalization_metadata.json"
             logging.info(f"📝 Writing metadata for '{var_name}' to {out_path}")
             with out_path.open("w") as f:
-                json.dump(meta, f, indent=2)
+                json.dump(meta_clean, f, indent=2)
             logging.info(f"✅ Wrote: {out_path}")
 
 

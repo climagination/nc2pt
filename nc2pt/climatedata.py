@@ -36,7 +36,7 @@ class ClimateModel:
     engine: Optional[str] = None  # Optional engine override for this model
     downsample: Optional[bool] = False  # Optional downsampling for invariant fields
     alignment_pipeline: List[str] = field(default_factory=lambda: [
-        "temporal_crop", "regrid", "spatial_crop", "coarsen", "split_data"
+        "temporal_crop", "regrid", "spatial_crop", "coarsen", "user_defined_transforms", "split_data"
     ])
 
 

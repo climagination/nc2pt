@@ -5,7 +5,7 @@ import pandas as pd
 import xarray as xr
 
 from nc2pt.climatedata import ClimateData, ClimateModel, ClimateVariable
-from nc2pt.computations import compute_normalization, compute_standardization
+from nc2pt.computations import compute_normalization, compute_standardization, user_defined_transform
 import omegaconf
 
 
@@ -261,6 +261,7 @@ def coarsen_lr(ds: xr.DataArray, scale_factor: int) -> xr.DataArray:
 
 def apply_temporal_crop(ds: xr.DataArray,
                         model: ClimateModel,
+                        var: ClimateVariable,
                         climdata: ClimateData,
                         hr_ref: xr.DataArray) -> xr.DataArray:
     """
@@ -270,8 +271,10 @@ def apply_temporal_crop(ds: xr.DataArray,
     ----------
     ds : xr.DataArray
         The input dataset.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
     model : ClimateModel
-        The climate model configuration.
+        Unused in this function; included for interface compatibility.
     climdata : ClimateData
         Global configuration object with time selection settings.
     hr_ref : xr.DataArray
@@ -289,6 +292,7 @@ def apply_temporal_crop(ds: xr.DataArray,
 
 
 def apply_regrid(ds: xr.DataArray,
+                 var: ClimateVariable,
                  model: ClimateModel,
                  climdata: ClimateData,
                  hr_ref: xr.DataArray) -> xr.DataArray:
@@ -299,10 +303,12 @@ def apply_regrid(ds: xr.DataArray,
     ----------
     ds : xr.DataArray
         The input dataset to regrid.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
     model : ClimateModel
         The climate model configuration.
     climdata : ClimateData
-        Global configuration object.
+        Unused in this function; included for interface compatibility.
     hr_ref : xr.DataArray
         High-resolution reference dataset.
 
@@ -329,6 +335,7 @@ def apply_regrid(ds: xr.DataArray,
 
 
 def apply_spatial_crop(ds: xr.DataArray,
+                       var: ClimateVariable,
                        model: ClimateModel,
                        climdata: ClimateData,
                        hr_ref: xr.DataArray) -> xr.DataArray:
@@ -339,8 +346,10 @@ def apply_spatial_crop(ds: xr.DataArray,
     ----------
     ds : xr.DataArray
         The input dataset to crop.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
     model : ClimateModel
-        The climate model configuration.
+        Unused in this function; included for interface compatibility.
     climdata : ClimateData
         Global configuration containing crop index bounds.
     hr_ref : xr.DataArray
@@ -360,6 +369,7 @@ def apply_spatial_crop(ds: xr.DataArray,
 
 
 def apply_coarsen(ds: xr.DataArray,
+                  var: ClimateVariable,
                   model: ClimateModel,
                   climdata: ClimateData,
                   hr_ref: xr.DataArray) -> xr.DataArray:
@@ -370,8 +380,10 @@ def apply_coarsen(ds: xr.DataArray,
     ----------
     ds : xr.DataArray
         The input dataset to coarsen.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
     model : ClimateModel
-        The climate model configuration.
+        Unused in this function; included for interface compatibility.
     climdata : ClimateData
         Global configuration containing coarsening parameters.
     hr_ref : xr.DataArray
@@ -388,7 +400,17 @@ def apply_coarsen(ds: xr.DataArray,
     return ds
 
 
+def apply_user_defined_transforms(ds: xr.DataArray,
+                                  var: ClimateVariable,
+                                  model: ClimateModel,
+                                  climdata: ClimateData,
+                                  hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
+
+    return user_defined_transform(ds, var)
+
+
 def apply_data_split(ds: xr.DataArray,
+                     var: ClimateVariable,
                      model: ClimateModel,
                      climdata: ClimateData,
                      hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
@@ -399,8 +421,10 @@ def apply_data_split(ds: xr.DataArray,
     ----------
     ds : xr.DataArray
         The input dataset to split.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
     model : ClimateModel
-        The climate model configuration.
+        Unused in this function; included for interface compatibility.
     climdata : ClimateData
         Global configuration containing year splits.
     hr_ref : xr.DataArray
@@ -419,6 +443,7 @@ def apply_data_split(ds: xr.DataArray,
 
 
 def run_alignment_pipeline(ds: xr.DataArray,
+                           var: ClimateVariable,
                            model: ClimateModel,
                            climdata: ClimateData,
                            hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
@@ -429,6 +454,8 @@ def run_alignment_pipeline(ds: xr.DataArray,
     ----------
     ds : xr.DataArray
         Input dataset to process.
+    var : ClimateVariable
+        Climate variable containing custom transformation proceedures.
     model : ClimateModel
         Climate model containing the alignment pipeline steps.
     climdata : ClimateData
@@ -450,7 +477,7 @@ def run_alignment_pipeline(ds: xr.DataArray,
     for step in model.alignment_pipeline:
         if step not in alignment_steps:
             raise ValueError(f"Unknown alignment step '{step}' in model '{model.name}'")
-        ds = alignment_steps[step](ds, model, climdata, hr_ref)
+        ds = alignment_steps[step](ds, var, model, climdata, hr_ref)
 
     if not isinstance(ds, dict):
         ds = {"full": ds}
@@ -462,6 +489,7 @@ alignment_steps: dict[str, Callable] = {
     "regrid": apply_regrid,
     "spatial_crop": apply_spatial_crop,
     "coarsen": apply_coarsen,
+    "user_defined_transforms": apply_user_defined_transforms,
     "split_data": apply_data_split,
 }
 

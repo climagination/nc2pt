@@ -6,7 +6,7 @@
 _target_: nc2pt.climatedata.ClimateModel
 name: lr
 info: "Low resolution ERA5, Western Canada"
-alignment_pipeline: ["temporal_crop", "regrid", "spatial_crop", "coarsen", "split_data"]
+alignment_pipeline: ["temporal_crop", "regrid", "spatial_crop", "coarsen", "user_defined_transforms", "split_data"]
 
 # Used to interpolate LR data to HR grid. This is typically a high-res field like T2.
 hr_ref:

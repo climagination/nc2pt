@@ -38,7 +38,7 @@ def user_defined_transform(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset:
         def func(x):
             return eval(transform)
 
-        logging.info(f"Applying transform {transform} to {var.name}...")
+        logging.info(f"🧮 Applying transform {transform} to {var.name}...")
         ds[var.name] = xr.apply_ufunc(func, ds[var.name], dask="parallelized")
 
     return ds

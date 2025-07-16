@@ -56,22 +56,29 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         ds = configure_metadata_fn(ds, climate_variable)
         metadata_collector.log_variable_units_from_dataset(climate_variable.name, ds)
         ds = climdata.apply_chunks(ds)
-        ds_aligned = run_alignment_pipeline(ds, model, climdata, hr_ref)
+        ds_aligned = run_alignment_pipeline(ds, climate_variable, model, climdata, hr_ref)
         ds_aligned = apply_feature_scaling(ds_aligned, climate_variable)
+        reference_key = "train" if "train" in ds_aligned else "full"
+        metadata_collector.add_variable_from_config(
+            climate_data=climdata,
+            climate_variable=climate_variable,
+            processed_ds=ds_aligned[reference_key],
+            model_name=model.name
+        )
 
-        for dataset in ds_aligned:
-            # metadata_collector.add_variable_from_config(climate_data=climdata,
-            #                                             climate_variable=climate_variable,
-            #                                             processed_ds=["train"],
-            #                                             model_name=model.name)
-            write_to_zarr(
-                    climdata.apply_chunks(ds_aligned[dataset]),
-                    f"{climdata.output_path}/{climate_variable.name}_{dataset}_{model.name}",
-                )
+        for dataset_key, dataset in ds_aligned.items():
+            # Skip 'full' in filename if not split
+            if dataset_key == "full":
+                out_path = f"{climdata.output_path}/{climate_variable.name}_{model.name}"
+            else:
+                out_path = f"{climdata.output_path}/{climate_variable.name}_{dataset_key}_{model.name}"
+            logging.info(f"✨ Writing {dataset_key} output...")
+            write_to_zarr(climdata.apply_chunks(dataset), out_path)
+
         end = timer()
         logging.info(f"🎉 Done processing {climate_variable.name} in {model.info}!")
         logging.info(f"⏳ Time elapsed ⏳: {timedelta(seconds=end-start)}")
-        del ds
+        del ds, ds_aligned
     metadata_collector.write_all()
 
         # ds = (
