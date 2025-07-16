@@ -25,3 +25,4 @@ climate_models:
   - ${internal.lr}
   #- ${internal.lr_invariant}
   #- ${internal.hr_invariant}
+  #- ${internal.my_model}
