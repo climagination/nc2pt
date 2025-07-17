@@ -29,15 +29,10 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
 
     configure_metadata_fn = partial(configure_metadata, climdata=climdata)
     metadata_collector = NormalizerMetadataCollector(climdata.output_path)
-    alignment_procedures = {}
     if model.hr_ref is not None:
         hr_ref = load_grid(model.hr_ref.path, engine=climdata.compute.engine)
         logging.info("👀 Processing high resolution reference field...")
         hr_ref = configure_metadata_fn(hr_ref, instantiate(model.hr_ref))
-        alignment_procedures |= {
-            "lr": partial(align_with_lr, hr_ref=hr_ref, climdata=climdata),
-            "lr_invariant": partial(align_with_lr, hr_ref=hr_ref, climdata=climdata),
-        }
     else: hr_ref = None
 
     for climate_variable in model.climate_variables:
