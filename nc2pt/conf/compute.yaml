@@ -1,0 +1,9 @@
+# dask client parameters
+compute:
+  # xarray netcdf engine
+  engine: h5netcdf
+  dask_dashboard_address: 8787
+  chunks:
+    time: 100
+    rlat: -1
+    rlon: -1

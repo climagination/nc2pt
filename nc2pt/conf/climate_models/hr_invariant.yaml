@@ -1,0 +1,11 @@
+# climate_models/hr_invariant.yaml
+# High-resolution invariant model (e.g., topography) for the WRF domain.
+# Used without downsampling. Typically includes static fields like elevation.
+
+_target_: nc2pt.climatedata.ClimateModel
+name: hr_invariant
+info: "HR static invariant fields for WRF domain"
+engine: netcdf4
+
+climate_variables:
+  - ${internal.hr_invariant_topo}

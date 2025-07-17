@@ -1,0 +1,11 @@
+# Precipitation from WRF (HR model)
+
+_target_: nc2pt.climatedata.ClimateVariable
+name: "pr"
+alternative_names: ["PREC"]
+path:  ${internal.paths.hr.pr}
+is_west_negative: true
+apply_standardize: false
+apply_normalize: true
+invariant: false
+transform: []

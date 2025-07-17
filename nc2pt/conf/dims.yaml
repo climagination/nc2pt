@@ -1,0 +1,35 @@
+# dims.yaml
+# Defines dimensions that are used for chunking and coordinate mapping in both HR and LR datasets.
+# Each entry is instantiated as a ClimateDimension object with optional HR/LR specificity.
+
+dims:
+  - _target_: nc2pt.climatedata.ClimateDimension
+    name: time
+    alternative_names: ["forecast_initial_time", "Time", "Times", "times"]
+    chunksize: 100
+
+  # ───── Rotated grid ─────
+  - _target_: nc2pt.climatedata.ClimateDimension
+    name: rlat
+    alternative_names: ["rotated_latitude", "south_north"]
+    hr_only: true
+    chunksize: -1
+
+  - _target_: nc2pt.climatedata.ClimateDimension
+    name: rlon
+    alternative_names: ["rotated_longitude", "west_east"]
+    hr_only: true
+    chunksize: -1
+
+  # ───── Regular lat/lon ─────
+  - _target_: nc2pt.climatedata.ClimateDimension
+    name: lat
+    alternative_names: ["latitude", "Lat", "Latitude"]
+    hr_only: false
+    chunksize: -1
+
+  - _target_: nc2pt.climatedata.ClimateDimension
+    name: lon
+    alternative_names: ["longitude", "Long", "Lon", "Longitude"]
+    hr_only: false
+    chunksize: -1

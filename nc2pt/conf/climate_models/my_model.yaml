@@ -1,0 +1,21 @@
+# Template for defining a new climate model (e.g., ERA5, CMIP6)
+_target_: nc2pt.climatedata.ClimateModel
+
+name: my_model
+info: "Custom climate model for [describe domain, resolution, etc.]"
+
+# Optional reference field for interpolation (e.g., from HR WRF domain)
+# Uncomment and adapt if needed
+# hr_ref:
+#   _target_: nc2pt.climatedata.ClimateVariable
+#   name: hr_ref
+#   alternative_names: ["T2"]
+#   path: ${internal.paths.hr_ref}
+#   is_west_negative: true
+#   invariant: true
+
+climate_variables:
+  - ${internal.my_model_uas}
+  # - ${internal.my_model_vas}
+  # - ${internal.my_model_tas}
+  # - ${internal.my_model_pr}

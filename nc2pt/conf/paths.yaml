@@ -1,0 +1,42 @@
+# paths.yaml
+# This file defines all file paths used for the high-resolution (HR) and low-resolution (LR) models.
+# These paths are injected into the config via `paths@internal` and referenced in variable configs as `${paths.hr.uas}`, etc.
+# Update the `hr_ref` path for your local environment if needed.
+
+paths:
+  # ────────────────────────────────────────
+  # User-dependent path for HR reference grid
+  # ────────────────────────────────────────
+  hr_ref: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
+
+  # ────────────────────────────────────────
+  # Shared data paths – High-Resolution WRF (HR)
+  # ────────────────────────────────────────
+  hr:
+    uas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
+    vas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/V10/*.nc
+    pr:  /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/PREC/*.nc
+    tas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/T2/*.nc
+
+  # ────────────────────────────────────────
+  # Shared data paths – Low-Resolution ERA5 (LR)
+  # ────────────────────────────────────────
+  lr:
+    uas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+    vas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/vas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+    pr:  /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/pr_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc
+    tas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+
+  # ────────────────────────────────────────
+  # Shared invariant fields (e.g., orography, landmask)
+  # ────────────────────────────────────────
+  hr_invariant: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
+
+  # ────────────────────────────────────────
+  # User-dependent path for My Model Template
+  # ────────────────────────────────────────
+  my_model:
+    uas: /path/to/my_model/uas_data.nc
+    # vas: /path/to/my_model/vas_data.nc
+    # tas: /path/to/my_model/tas_data.nc
+    # pr:  /path/to/my_model/pr_data.nc

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import logging
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Any, Dict
 import xarray as xr
 
 
@@ -36,9 +36,6 @@ class ClimateModel:
     engine: Optional[str] = None  # Optional engine override for this model
     downsample: Optional[bool] = False  # Optional downsampling for invariant fields
 
-    def __post_init__(self):
-        logging.info(f"🌎 Instantiated Model with information: {self.info}")
-
 
 @dataclass
 class ClimateData:
@@ -49,6 +46,7 @@ class ClimateData:
     select: dict
     compute: dict
     loader: dict
+    internal: Dict[str, Any] = field(default_factory=dict, repr=False)
 
     def apply_chunks(self, ds: xr.Dataset) -> xr.Dataset:
         """
@@ -73,3 +71,8 @@ class ClimateData:
         else:
             logging.warning("No matching dimensions found for chunking.")
             return ds
+
+
+    def __post_init__(self):
+        for model in self.climate_models:
+            logging.info(f"🌎 Instantiated Model with information: {model.info}")

@@ -1,0 +1,11 @@
+# Precipitation from ERA5 (LR Model)
+
+_target_: nc2pt.climatedata.ClimateVariable
+name: "pr"
+alternative_names: ["PREC"]
+path: ${internal.paths.lr.pr}
+is_west_negative: false
+apply_standardize: false
+apply_normalize: true
+invariant: false
+transform: ["x * 3600"]
