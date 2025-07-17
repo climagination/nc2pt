@@ -1,6 +1,6 @@
 from nc2pt.metadata import configure_metadata, NormalizerMetadataCollector
 from nc2pt.io import load_grid, write_to_zarr
-from nc2pt.align import align_with_lr, run_alignment_pipeline, apply_feature_scaling
+from nc2pt.align import run_alignment_pipeline, apply_feature_scaling
 from nc2pt.climatedata import ClimateData, ClimateModel
 
 import logging

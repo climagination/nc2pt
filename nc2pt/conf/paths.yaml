@@ -7,7 +7,7 @@ paths:
   # ────────────────────────────────────────
   # User-dependent path for HR reference grid
   # ────────────────────────────────────────
-  hr_ref: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
+  hr_ref: /home/username/projects/nc2pt/nc2pt/data/hr_ref.nc
 
   # ────────────────────────────────────────
   # Shared data paths – High-Resolution WRF (HR)
@@ -31,6 +31,10 @@ paths:
   # Shared invariant fields (e.g., orography, landmask)
   # ────────────────────────────────────────
   hr_invariant: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
+
+
+  
+
 
   # ────────────────────────────────────────
   # User-dependent path for My Model Template
