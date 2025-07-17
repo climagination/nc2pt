@@ -129,11 +129,6 @@ def crop_field(ds: xr.DataArray, scale_factor: int, x: dict, y: dict, downsample
         ds.rlon.size == ds.rlat.size
     ), "rlon and rlat not the same size, check dataset"
 
-    # if downsample:
-    #     # Optional coarsen for low resolution invariant fields.
-    #     logging.info("🌎 Coarsening HR invariant to become LR invariant...")
-    #     ds = coarsen_lr(ds, scale_factor)
-
     return ds
 
 
@@ -182,59 +177,6 @@ def interpolate(ds: xr.Dataset, grid: xr.Dataset) -> xr.Dataset:
         lon=interp_points["lon"],
         method="linear"
     )
-    return ds
-
-
-def align_grid(
-    ds: xr.DataArray, hr_ref: xr.DataArray, climdata: ClimateData
-) -> xr.DataArray:
-    """Processes low resolution dataset for machine learning.
-
-    Regrids, aligns, crops, and coarsens the low resolution dataset for use in machine learning.
-
-    Args:
-    ds: Low resolution xarray dataset.
-    climdata: Climate data configuration object.
-
-    Returns:
-    Processed low resolution xarray dataset.
-    """
-    # Regrid and align the dataset.
-    logging.info("🚀 Regridding and interpolating...")
-    ds = interpolate(ds, hr_ref)
-
-    # Crop the field to the given size.
-    logging.info("🌎 Cropping field...")
-    ds = crop_field(
-        ds,
-        climdata.select.spatial.scale_factor,
-        climdata.select.spatial.x,
-        climdata.select.spatial.y,
-    )
-    ds = ds.drop_vars(["lat", "lon"])
-
-    return ds
-
-
-def align_with_lr(ds, hr_ref, climdata) -> xr.Dataset:
-    """Processes low resolution dataset for machine learning.
-
-    Regrids, aligns, crops, and coarsens the low resolution dataset for use in machine learning.
-
-    Args:
-    ds: Low resolution xarray dataset.
-    climdata: Climate data configuration object.
-
-    Returns:
-    Processed low resolution xarray dataset.
-    """
-    # Regrid and align the dataset.
-    ds = align_grid(ds, hr_ref, climdata)
-
-    # Coarsen the low resolution dataset.
-    logging.info("🌎 Coarsening low resolution dataset...")
-    ds = coarsen_lr(ds, climdata.select.spatial.scale_factor)
-
     return ds
 
 
@@ -404,8 +346,28 @@ def apply_user_defined_transforms(ds: xr.DataArray,
                                   var: ClimateVariable,
                                   model: ClimateModel,
                                   climdata: ClimateData,
-                                  hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
+                                  hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Apply user-defined transformations to the input dataset.
 
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to transform.
+    var : ClimateVariable
+        Contains transformation instructions (e.g., unit conversions or log-scaling).
+    model : ClimateModel
+        Unused in this function; included for interface compatibility.
+    climdata : ClimateData
+        Unused in this function; included for interface compatibility.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    xr.DataArray
+        Transformed dataset.
+    """
     return user_defined_transform(ds, var)
 
 
