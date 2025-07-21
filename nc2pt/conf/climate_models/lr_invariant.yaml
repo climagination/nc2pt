@@ -6,7 +6,6 @@ _target_: nc2pt.climatedata.ClimateModel
 name: lr_invariant
 info: "HR static invariant fields for WRF domain to be downsampled to LR"
 engine: netcdf4
-downsample: true
 alignment_pipeline: ['spatial_crop', 'coarsen']
 
 climate_variables:

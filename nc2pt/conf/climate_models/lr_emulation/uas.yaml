@@ -1,0 +1,12 @@
+# Zonal (East-West) component of 10 m wind from ERA 5 (LR Model)
+
+_target_: nc2pt.climatedata.ClimateVariable
+name: "uas"
+alternative_names: ["U10", "u10", "uas"]
+path: ${internal.paths.lr.uas}
+is_west_negative: false
+apply_standardize: false
+apply_normalize: true
+invariant: false
+transform: []
+metadata_path: ${internal.paths.lr_emulation.uas_metadata}
