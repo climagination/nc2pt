@@ -51,7 +51,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         metadata_collector.log_variable_units_from_dataset(climate_variable.name, ds)
         ds = climdata.apply_chunks(ds)
         ds_aligned = run_alignment_pipeline(ds, climate_variable, model, climdata, hr_ref)
-        ds_aligned = apply_feature_scaling(ds_aligned, climate_variable)
+        ds_aligned = apply_feature_scaling(ds_aligned, climate_variable, model)
         reference_key = "train" if "train" in ds_aligned else "full"
 
         metadata_collector.add_variable_from_config(

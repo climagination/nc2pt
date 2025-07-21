@@ -1,5 +1,11 @@
 from datetime import datetime
 import xarray as xr
+import json
+
+
+def load_metadata(path: str) -> dict:
+    with open(path, 'r') as f:
+        return json.load(f)
 
 
 def load_grid(path: str, engine: str = "netcdf4", chunks: int = 250) -> xr.Dataset:

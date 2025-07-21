@@ -6,6 +6,7 @@ import xarray as xr
 
 from nc2pt.climatedata import ClimateData, ClimateModel, ClimateVariable
 from nc2pt.computations import compute_normalization, compute_standardization, user_defined_transform
+from nc2pt.io import load_metadata
 import omegaconf
 
 
@@ -458,7 +459,8 @@ alignment_steps: dict[str, Callable] = {
 
 def apply_feature_scaling(
     ds_dict: dict[str, xr.Dataset],
-    var: ClimateVariable
+    var: ClimateVariable,
+    model: ClimateModel
 ) -> dict[str, xr.Dataset]:
     """
     Applies standardization or normalization to datasets in a dictionary.
@@ -481,6 +483,18 @@ def apply_feature_scaling(
     """
     varname = var.name
 
+    if model.emulation_data:
+        metadata = load_metadata(var.metadata_path)
+        
+        if (var.apply_normalize and metadata['apply_standardize']):
+            raise ValueError('Configured variable feature scaling method ' \
+            'and metadata variable scaling method do not align')
+        if (var.apply_standardize and metadata['apply_normalize']):
+            raise ValueError('Configured variable feature scaling method ' \
+            'and metadata variable scaling method do not align')
+        
+        feature_scaling_stats = {'max': metadata['max'], 'min': metadata['min']}
+
     if var.apply_standardize:
         logging.info(f"📏 Standardizing {varname}...")
         if "train" in ds_dict:
@@ -489,7 +503,9 @@ def apply_feature_scaling(
             val = compute_standardization(ds_dict["validation"], varname, ds_dict["train"])
             return {"train": train, "test": test, "validation": val}
         elif "full" in ds_dict:
-            full = compute_standardization(ds_dict["full"], varname)
+            full = compute_standardization(ds_dict["full"],
+                                           varname,
+                                           feature_scaling_stats=feature_scaling_stats)
             return {"full": full}
 
     if var.apply_normalize:
@@ -500,7 +516,9 @@ def apply_feature_scaling(
             val = compute_normalization(ds_dict["validation"], varname, ds_dict["train"])
             return {"train": train, "test": test, "validation": val}
         elif "full" in ds_dict:
-            full = compute_normalization(ds_dict["full"], varname)
+            full = compute_normalization(ds_dict["full"],
+                                         varname,
+                                         feature_scaling_stats=feature_scaling_stats)
             return {"full": full}
 
     logging.info(f"🚫 Skipping standardization and normalization for {varname}")

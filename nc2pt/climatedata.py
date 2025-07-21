@@ -22,6 +22,7 @@ class ClimateVariable:
     invariant: Optional[bool] = field(default=False)
     apply_standardize: Optional[bool] = field(default=True)
     apply_normalize: Optional[bool] = field(default=False)
+    metadata_path: Optional[str] = field(default=None)
 
 
 # Write a dataclass that loads config data from hydra-core and
@@ -34,7 +35,7 @@ class ClimateModel:
     climate_variables: List[ClimateVariable]
     hr_ref: Optional[ClimateVariable] = None
     engine: Optional[str] = None  # Optional engine override for this model
-    downsample: Optional[bool] = False  # Optional downsampling for invariant fields
+    emulation_data: Optional[bool] = False  # Optional bool to handle metadata ingestion
     alignment_pipeline: List[str] = field(default_factory=lambda: [
         "temporal_crop", "regrid", "spatial_crop", "coarsen", "user_defined_transforms", "split_data"
     ])

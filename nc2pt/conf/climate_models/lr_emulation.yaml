@@ -4,8 +4,8 @@
 # Ensure all referenced variables are injected in `injections.yaml`.
 
 _target_: nc2pt.climatedata.ClimateModel
-name: lr
-info: "Low resolution ERA5, Western Canada"
+name: lr_emulation
+info: "Low resolution ERA5, Western Canada - For Emulation"
 alignment_pipeline: ["temporal_crop", "regrid", "spatial_crop", "coarsen", "user_defined_transforms"]
 emulation_data: true
 
@@ -20,7 +20,7 @@ hr_ref:
 
 climate_variables:
   # Activate variables to include in the LR model
-  - ${internal.lr_uas}
+  - ${internal.lr_emulation_uas}
   #- ${internal.lr_vas}
   #- ${internal.lr_tas}
   #- ${internal.lr_pr}

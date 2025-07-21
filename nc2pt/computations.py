@@ -43,14 +43,17 @@ def user_defined_transform(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset:
     return ds
 
 
-def compute_normalization(ds, varname, precomputed=None):
+def compute_normalization(ds, varname, precomputed=None, feature_scaling_stats=None):
     logging.info(f"Normalizing {varname}...")
-    if precomputed is None:
+    if (precomputed is None and feature_scaling_stats is None):
         logging.info("Computing min and max...")
         logging.info("Calculation min...")
         min = ds[varname].min().compute()
         logging.info("Calculation max...")
         max = ds[varname].max().compute()
+    elif feature_scaling_stats is not None:
+        min = feature_scaling_stats['min']
+        max = feature_scaling_stats['max']
     else:
         if (
             "min" not in precomputed[varname].attrs

@@ -36,10 +36,10 @@ paths:
   # User-dependent path for – Low-Resolution ERA5 Emulation Metadata (LR Emulation) 
   # ────────────────────────────────────────
   lr_emulation:
-    uas_metadata: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/uas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
-    vas_metadata: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/vas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
-    pr_metadata:  /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/pr_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc
-    tas_metadata: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+    uas_metadata: /home/sbeairsto/data-sbeairsto/config_test/uas_normalization_metadata.json
+    vas_metadata: /home/sbeairsto/data-sbeairsto/config_test/vas_normalization_metadata.json
+    pr_metadata:  /home/sbeairsto/data-sbeairsto/config_test/pr_normalization_metadata.json
+    tas_metadata: /home/sbeairsto/data-sbeairsto/config_test/tas_normalization_metadata.json
 
   # ────────────────────────────────────────
   # User-dependent path for My Model Template
