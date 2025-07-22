@@ -1,12 +1,11 @@
 import logging
 from typing import Dict, Callable
-
+from pathlib import Path
 import pandas as pd
 import xarray as xr
 
-from nc2pt.climatedata import ClimateData, ClimateModel, ClimateVariable
+from nc2pt.climatedata import ClimateData, ClimateModel, ClimateVariable, FeatureScalingMetadata
 from nc2pt.computations import compute_normalization, compute_standardization, user_defined_transform
-from nc2pt.io import load_metadata
 import omegaconf
 
 
@@ -484,16 +483,9 @@ def apply_feature_scaling(
     varname = var.name
 
     if model.emulation_data:
-        metadata = load_metadata(var.metadata_path)
-        
-        if (var.apply_normalize and metadata['apply_standardize']):
-            raise ValueError('Configured variable feature scaling method ' \
-            'and metadata variable scaling method do not align')
-        if (var.apply_standardize and metadata['apply_normalize']):
-            raise ValueError('Configured variable feature scaling method ' \
-            'and metadata variable scaling method do not align')
-        
-        feature_scaling_stats = {'max': metadata['max'], 'min': metadata['min']}
+        metadata = FeatureScalingMetadata.from_json(Path(var.metadata_path))
+        metadata.validate_against_var(var)
+        feature_scaling_stats = metadata.get_stats()
 
     if var.apply_standardize:
         logging.info(f"📏 Standardizing {varname}...")
