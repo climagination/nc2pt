@@ -1,7 +1,6 @@
 from nc2pt.metadata import configure_metadata, NormalizerMetadataCollector
 from nc2pt.io import load_grid, write_to_zarr
-from nc2pt.align import align_with_lr, crop_field, slice_time
-from nc2pt.computations import split_and_standardize, standardize_or_normalize
+from nc2pt.align import run_alignment_pipeline, apply_feature_scaling
 from nc2pt.climatedata import ClimateData, ClimateModel
 
 import logging
@@ -30,15 +29,11 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
 
     configure_metadata_fn = partial(configure_metadata, climdata=climdata)
     metadata_collector = NormalizerMetadataCollector(climdata.output_path)
-    alignment_procedures = {}
     if model.hr_ref is not None:
         hr_ref = load_grid(model.hr_ref.path, engine=climdata.compute.engine)
         logging.info("👀 Processing high resolution reference field...")
         hr_ref = configure_metadata_fn(hr_ref, instantiate(model.hr_ref))
-        alignment_procedures |= {
-            "lr": partial(align_with_lr, hr_ref=hr_ref, climdata=climdata),
-            "lr_invariant": partial(align_with_lr, hr_ref=hr_ref, climdata=climdata),
-        }
+    else: hr_ref = None
 
     for climate_variable in model.climate_variables:
         # Instantiates climate_variable object in cliamtedata.py
@@ -55,66 +50,30 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         ds = configure_metadata_fn(ds, climate_variable)
         metadata_collector.log_variable_units_from_dataset(climate_variable.name, ds)
         ds = climdata.apply_chunks(ds)
+        ds_aligned = run_alignment_pipeline(ds, climate_variable, model, climdata, hr_ref)
+        ds_aligned = apply_feature_scaling(ds_aligned, climate_variable)
+        reference_key = "train" if "train" in ds_aligned else "full"
 
-        ds = (
-            slice_time(
-                ds, climdata.select.time.range.start, climdata.select.time.range.end
-            )
-            if climate_variable.invariant is False
-            else ds
+        metadata_collector.add_variable_from_config(
+            climate_data=climdata,
+            climate_variable=climate_variable,
+            processed_ds=ds_aligned[reference_key],
+            model_name=model.name
         )
 
-        alignment_procedures |= {
-            "hr": partial(
-                crop_field,
-                scale_factor=climdata.select.spatial.scale_factor,
-                x=climdata.select.spatial.x,
-                y=climdata.select.spatial.y,
-            ),
-            "hr_invariant": partial(
-                crop_field,
-                scale_factor=climdata.select.spatial.scale_factor,
-                x=climdata.select.spatial.x,
-                y=climdata.select.spatial.y,
-            ),
-            "lr_invariant": partial(
-                crop_field,
-                scale_factor=climdata.select.spatial.scale_factor,
-                x=climdata.select.spatial.x,
-                y=climdata.select.spatial.y,
-                downsample=getattr(model, "downsample", False),
-            ),
-        }
-
-        # This implies that it is a different grid or a lr dataset.
-        ds = alignment_procedures[model.name](ds)
-        if climate_variable.invariant is False:
-            train_test_validation_ds = split_and_standardize(
-                ds, climdata, climate_variable
-            )
-            metadata_collector.add_variable_from_config(climate_data=climdata,
-                                                        climate_variable=climate_variable,
-                                                        processed_ds=train_test_validation_ds["train"],
-                                                        model_name=model.name)
-            for train_test_validation in train_test_validation_ds:
-                logging.info(f"✨ Writing {train_test_validation} output...")
-                write_to_zarr(
-                    climdata.apply_chunks(train_test_validation_ds[train_test_validation]),
-                    f"{climdata.output_path}/{climate_variable.name}_{train_test_validation}_{model.name}",
-                )
-
-        else:
-            ds = standardize_or_normalize(ds, climate_variable)
-            logging.info("✨ Writing output...")
-            write_to_zarr(
-                climdata.apply_chunks(ds),
-                f"{climdata.output_path}/{climate_variable.name}_{model.name}",
-            )
+        for dataset_key, dataset in ds_aligned.items():
+            # Skip 'full' in filename if not split
+            if dataset_key == "full":
+                out_path = f"{climdata.output_path}/{climate_variable.name}_{model.name}"
+            else:
+                out_path = f"{climdata.output_path}/{climate_variable.name}_{dataset_key}_{model.name}"
+            logging.info(f"✨ Writing {dataset_key} output...")
+            write_to_zarr(climdata.apply_chunks(dataset), out_path)
 
         end = timer()
         logging.info(f"🎉 Done processing {climate_variable.name} in {model.info}!")
         logging.info(f"⏳ Time elapsed ⏳: {timedelta(seconds=end-start)}")
-        del ds
+        del ds, ds_aligned
     metadata_collector.write_all()
 
 

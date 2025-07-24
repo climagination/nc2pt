@@ -1,10 +1,11 @@
 import logging
-from typing import Dict
+from typing import Dict, Callable
 
 import pandas as pd
 import xarray as xr
 
-from nc2pt.climatedata import ClimateData
+from nc2pt.climatedata import ClimateData, ClimateModel, ClimateVariable
+from nc2pt.computations import compute_normalization, compute_standardization, user_defined_transform
 import omegaconf
 
 
@@ -41,6 +42,7 @@ def slice_time(ds: xr.Dataset, start: str, end: str) -> xr.Dataset:
         raise ValueError("End date is after the dataset ends.")
 
     ds = ds.sel(time=slice(start, end), drop=True)
+    logging.info(f"🕜 Cropped dataset temporally from {start} to {end}")
 
     return ds
 
@@ -88,7 +90,7 @@ def train_test_split(
     return {"train": train, "test": test, "validation": validation}
 
 
-def crop_field(ds, scale_factor, x, y, downsample=False):
+def crop_field(ds: xr.DataArray, scale_factor: int, x: dict, y: dict, downsample=False) -> xr.DataArray:
     """Crop the field to the given size.
 
     Parameters
@@ -126,11 +128,6 @@ def crop_field(ds, scale_factor, x, y, downsample=False):
     assert (
         ds.rlon.size == ds.rlat.size
     ), "rlon and rlat not the same size, check dataset"
-
-    if downsample:
-        # Optional coarsen for low resolution invariant fields.
-        logging.info("🌎 Coarsening HR invariant to become LR invariant...")
-        ds = coarsen_lr(ds, scale_factor)
 
     return ds
 
@@ -183,60 +180,7 @@ def interpolate(ds: xr.Dataset, grid: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def align_grid(
-    ds: xr.DataArray, hr_ref: xr.DataArray, climdata: ClimateData
-) -> xr.DataArray:
-    """Processes low resolution dataset for machine learning.
-
-    Regrids, aligns, crops, and coarsens the low resolution dataset for use in machine learning.
-
-    Args:
-    ds: Low resolution xarray dataset.
-    climdata: Climate data configuration object.
-
-    Returns:
-    Processed low resolution xarray dataset.
-    """
-    # Regrid and align the dataset.
-    logging.info("🚀 Regridding and interpolating...")
-    ds = interpolate(ds, hr_ref)
-
-    # Crop the field to the given size.
-    logging.info("🌎 Cropping field...")
-    ds = crop_field(
-        ds,
-        climdata.select.spatial.scale_factor,
-        climdata.select.spatial.x,
-        climdata.select.spatial.y,
-    )
-    ds = ds.drop_vars(["lat", "lon"])
-
-    return ds
-
-
-def align_with_lr(ds, hr_ref, climdata) -> xr.Dataset:
-    """Processes low resolution dataset for machine learning.
-
-    Regrids, aligns, crops, and coarsens the low resolution dataset for use in machine learning.
-
-    Args:
-    ds: Low resolution xarray dataset.
-    climdata: Climate data configuration object.
-
-    Returns:
-    Processed low resolution xarray dataset.
-    """
-    # Regrid and align the dataset.
-    ds = align_grid(ds, hr_ref, climdata)
-
-    # Coarsen the low resolution dataset.
-    logging.info("🌎 Coarsening low resolution dataset...")
-    ds = coarsen_lr(ds, climdata.select.spatial.scale_factor)
-
-    return ds
-
-
-def coarsen_lr(ds, scale_factor):
+def coarsen_lr(ds: xr.DataArray, scale_factor: int) -> xr.DataArray:
     """Coarsen the low resolution dataset.
 
     Parameters
@@ -255,3 +199,309 @@ def coarsen_lr(ds, scale_factor):
     ds = ds.coarsen(rlon=scale_factor, rlat=scale_factor).mean()
 
     return ds
+
+
+def apply_temporal_crop(ds: xr.DataArray,
+                        model: ClimateModel,
+                        var: ClimateVariable,
+                        climdata: ClimateData,
+                        hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Crop the dataset to the configured start and end times.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
+    model : ClimateModel
+        Unused in this function; included for interface compatibility.
+    climdata : ClimateData
+        Global configuration object with time selection settings.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    xr.DataArray
+        Time-cropped dataset.
+    """
+    start = climdata.select.time.range.start
+    end = climdata.select.time.range.end
+    ds = slice_time(ds, start, end)
+    return ds
+
+
+def apply_regrid(ds: xr.DataArray,
+                 var: ClimateVariable,
+                 model: ClimateModel,
+                 climdata: ClimateData,
+                 hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Regrid the dataset to match a high-resolution reference field.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to regrid.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
+    model : ClimateModel
+        The climate model configuration.
+    climdata : ClimateData
+        Unused in this function; included for interface compatibility.
+    hr_ref : xr.DataArray
+        High-resolution reference dataset.
+
+    Returns
+    -------
+    xr.DataArray
+        Regridded dataset.
+
+    Raises
+    ------
+    ValueError
+        If no hr_ref is provided in the model configuration.
+    """
+    logging.info("🚀 Regridding and interpolating...")
+
+    if hr_ref is None:
+        raise ValueError(
+            f"Cannot perform 'regrid' step for model '{model.name}': "
+            f"'hr_ref' (the high-resolution reference field) is not defined.\n"
+            f"To enable regridding, add an 'hr_ref' field to the model YAML."
+        )
+    ds = interpolate(ds, hr_ref)
+    return ds
+
+
+def apply_spatial_crop(ds: xr.DataArray,
+                       var: ClimateVariable,
+                       model: ClimateModel,
+                       climdata: ClimateData,
+                       hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Crop the dataset spatially to configured x/y index bounds.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to crop.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
+    model : ClimateModel
+        Unused in this function; included for interface compatibility.
+    climdata : ClimateData
+        Global configuration containing crop index bounds.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    xr.DataArray
+        Cropped dataset.
+    """
+    scale_factor = climdata.select.spatial.scale_factor
+    x_range = climdata.select.spatial.x
+    y_range = climdata.select.spatial.y
+    ds = crop_field(ds, scale_factor, x_range, y_range)
+    logging.info(f"🌎 Cropped field to x:[{x_range.first_index},{x_range.last_index}] and y:[{y_range.first_index}, {y_range.last_index}]")
+    return ds
+
+
+def apply_coarsen(ds: xr.DataArray,
+                  var: ClimateVariable,
+                  model: ClimateModel,
+                  climdata: ClimateData,
+                  hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Coarsen the dataset spatially by a configured scale factor.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to coarsen.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
+    model : ClimateModel
+        Unused in this function; included for interface compatibility.
+    climdata : ClimateData
+        Global configuration containing coarsening parameters.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    xr.DataArray
+        Coarsened dataset.
+    """
+    scale_factor = climdata.select.spatial.scale_factor
+    coarsen_lr(ds, scale_factor)
+    logging.info(f"🪛  Coarsened field by a factor of {scale_factor}")
+    return ds
+
+
+def apply_user_defined_transforms(ds: xr.DataArray,
+                                  var: ClimateVariable,
+                                  model: ClimateModel,
+                                  climdata: ClimateData,
+                                  hr_ref: xr.DataArray) -> xr.DataArray:
+    """
+    Apply user-defined transformations to the input dataset.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to transform.
+    var : ClimateVariable
+        Contains transformation instructions (e.g., unit conversions or log-scaling).
+    model : ClimateModel
+        Unused in this function; included for interface compatibility.
+    climdata : ClimateData
+        Unused in this function; included for interface compatibility.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    xr.DataArray
+        Transformed dataset.
+    """
+    return user_defined_transform(ds, var)
+
+
+def apply_data_split(ds: xr.DataArray,
+                     var: ClimateVariable,
+                     model: ClimateModel,
+                     climdata: ClimateData,
+                     hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
+    """
+    Split the dataset into training, validation, and test sets based on years.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        The input dataset to split.
+    var : ClimateVariable
+        Unused in this function; included for interface compatibility.
+    model : ClimateModel
+        Unused in this function; included for interface compatibility.
+    climdata : ClimateData
+        Global configuration containing year splits.
+    hr_ref : xr.DataArray
+        Unused in this function; included for interface compatibility.
+
+    Returns
+    -------
+    dict[str, xr.DataArray]
+        Dictionary containing split datasets keyed by "train", "test", and "validation".
+    """
+    test_years = climdata.select.time.test_years
+    validation_years = climdata.select.time.validation_years
+    full_ds = train_test_split(ds, test_years, validation_years)
+    logging.info(f"🪓  Split dataset into test years: {test_years}, validation years: {validation_years}, and training years (remainder)")
+    return full_ds
+
+
+def run_alignment_pipeline(ds: xr.DataArray,
+                           var: ClimateVariable,
+                           model: ClimateModel,
+                           climdata: ClimateData,
+                           hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
+    """
+    Execute the alignment pipeline for a given climate model.
+
+    Parameters
+    ----------
+    ds : xr.DataArray
+        Input dataset to process.
+    var : ClimateVariable
+        Climate variable containing custom transformation proceedures.
+    model : ClimateModel
+        Climate model containing the alignment pipeline steps.
+    climdata : ClimateData
+        Global configuration for the preprocessing run.
+    hr_ref : xr.DataArray
+        Optional high-resolution reference field for regridding.
+
+    Returns
+    -------
+    dict[str, xr.DataArray]
+        Processed dataset(s), returned as a dictionary.
+        If no split is performed, a single entry with key "full" is returned.
+
+    Raises
+    ------
+    ValueError
+        If an unknown step is found in the model's pipeline.
+    """
+    for step in model.alignment_pipeline:
+        if step not in alignment_steps:
+            raise ValueError(f"Unknown alignment step '{step}' in model '{model.name}'")
+        ds = alignment_steps[step](ds, var, model, climdata, hr_ref)
+
+    if not isinstance(ds, dict):
+        ds = {"full": ds}
+    return ds
+
+
+alignment_steps: dict[str, Callable] = {
+    "temporal_crop": apply_temporal_crop,
+    "regrid": apply_regrid,
+    "spatial_crop": apply_spatial_crop,
+    "coarsen": apply_coarsen,
+    "user_defined_transforms": apply_user_defined_transforms,
+    "split_data": apply_data_split,
+}
+
+
+def apply_feature_scaling(
+    ds_dict: dict[str, xr.Dataset],
+    var: ClimateVariable
+) -> dict[str, xr.Dataset]:
+    """
+    Applies standardization or normalization to datasets in a dictionary.
+    If train/test/validation keys are provided, uses training statistics
+    for all splits. If only 'full' is present, scales in-place.
+
+    Parameters
+    ----------
+    ds_dict : dict[str, xr.Dataset]
+        Dictionary containing datasets to be scaled. Must contain either:
+        - 'train', 'test', 'validation', or
+        - 'full'
+    var : ClimateVariable
+        Variable config containing scaling flags and variable name.
+
+    Returns
+    -------
+    dict[str, xr.Dataset]
+        Same keys as input, with values scaled according to the config.
+    """
+    varname = var.name
+
+    if var.apply_standardize:
+        logging.info(f"📏 Standardizing {varname}...")
+        if "train" in ds_dict:
+            train = compute_standardization(ds_dict["train"], varname)
+            test = compute_standardization(ds_dict["test"], varname, ds_dict["train"])
+            val = compute_standardization(ds_dict["validation"], varname, ds_dict["train"])
+            return {"train": train, "test": test, "validation": val}
+        elif "full" in ds_dict:
+            full = compute_standardization(ds_dict["full"], varname)
+            return {"full": full}
+
+    if var.apply_normalize:
+        logging.info(f"📐 Normalizing {varname}...")
+        if "train" in ds_dict:
+            train = compute_normalization(ds_dict["train"], varname)
+            test = compute_normalization(ds_dict["test"], varname, ds_dict["train"])
+            val = compute_normalization(ds_dict["validation"], varname, ds_dict["train"])
+            return {"train": train, "test": test, "validation": val}
+        elif "full" in ds_dict:
+            full = compute_normalization(ds_dict["full"], varname)
+            return {"full": full}
+
+    logging.info(f"🚫 Skipping standardization and normalization for {varname}")
+    return ds_dict

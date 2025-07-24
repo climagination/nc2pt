@@ -22,6 +22,7 @@ output_path: /home/sbeairsto/data-sbeairsto/config_test
 # Define the list of climate models to include (injected in `injections.yaml`)
 climate_models:
   #- ${internal.hr}
-  #- ${internal.lr}  # Uncomment to include low-resolution model
-  - ${internal.lr_invariant}
-  - ${internal.hr_invariant}
+  - ${internal.lr}
+  #- ${internal.lr_invariant}
+  #- ${internal.hr_invariant}
+  #- ${internal.my_model}
