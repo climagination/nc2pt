@@ -7,7 +7,7 @@ paths:
   # ────────────────────────────────────────
   # User-dependent path for HR reference grid
   # ────────────────────────────────────────
-  hr_ref: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
+  hr_ref: /home/username/projects/nc2pt/nc2pt/data/hr_ref.nc
 
   # ────────────────────────────────────────
   # Shared data paths – High-Resolution WRF (HR)
@@ -36,10 +36,10 @@ paths:
   # User-dependent path for – Low-Resolution ERA5 Emulation Metadata (LR Emulation) 
   # ────────────────────────────────────────
   lr_emulation:
-    uas_metadata: /home/sbeairsto/data-sbeairsto/config_test/lr_uas_feature_scaling_metadata.json
-    vas_metadata: /home/sbeairsto/data-sbeairsto/config_test/lr_vas_feature_scaling_metadata.json
-    pr_metadata:  /home/sbeairsto/data-sbeairsto/config_test/lr_pr_feature_scaling_metadata.json
-    tas_metadata: /home/sbeairsto/data-sbeairsto/config_test/lr_tas_feature_scaling_metadata.json
+    uas_metadata: /home/username/data/path/lr_uas_feature_scaling_metadata.json
+    vas_metadata: /home/username/data/path/lr_vas_feature_scaling_metadata.json
+    pr_metadata:  /home/username/data/path/lr_pr_feature_scaling_metadata.json
+    tas_metadata: /home/username/data/path/lr_tas_feature_scaling_metadata.json
 
   # ────────────────────────────────────────
   # User-dependent path for My Model Template
