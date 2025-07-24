@@ -7,7 +7,7 @@ select:
   time:
     # Define the full available date range
     range:
-      start: "20001001T06:00:00"
+      start: "20001201T06:00:00"
       end: "20010101T12:00:00"
 
     # Select years to reserve for testing and validation

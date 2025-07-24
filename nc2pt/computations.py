@@ -44,8 +44,24 @@ def user_defined_transform(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset:
 
 
 def compute_normalization(ds, varname, precomputed=None, feature_scaling_stats=None):
-    logging.info(f"Normalizing {varname}...")
-    if (precomputed is None and feature_scaling_stats is None):
+    """ Normalize the statistics of the dataset.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset to standardize the statistics of.
+    varname: str
+        String containing variable name
+    feature_scaling_stat: dict
+        Dictionary containing max and min, by default None
+    precomputed : xarray.Dataset, optional
+        Dataset containing precomputed statistics, by default None
+    Returns
+    -------
+    ds : xarray.Dataset
+        Dataset with standardized statistics.
+    """
+    if (precomputed is None and (not feature_scaling_stats)):
         logging.info("Computing min and max...")
         logging.info("Calculation min...")
         min = ds[varname].min().compute()
@@ -109,6 +125,7 @@ def standardize(x: xr.DataArray, mean: float, std: float) -> xr.DataArray:
 def compute_standardization(
     ds: xr.Dataset,
     varname: str,
+    feature_scaling_stats: dict[str, float] = None,
     precomputed: xr.Dataset = None,
 ) -> xr.Dataset:  # sourcery skip: avoid-builtin-shadow
     """Standardize the statistics of the dataset.
@@ -117,6 +134,10 @@ def compute_standardization(
     ----------
     ds : xarray.Dataset
         Dataset to standardize the statistics of.
+    varname: str
+        String containing variable name
+    feature_scaling_stat: dict
+        Dictionary containing mean and std, by default None
     precomputed : xarray.Dataset, optional
         Dataset containing precomputed statistics, by default None
     Returns
@@ -124,13 +145,17 @@ def compute_standardization(
     ds : xarray.Dataset
         Dataset with standardized statistics.
     """
-    logging.info(f"Standardizing {varname}...")
+
     logging.info("Computing mean and standard deviation...")
-    if precomputed is None:
+
+    if precomputed is None and feature_scaling_stats is None:
         logging.info("Calculation mean...")
         mean = ds[varname].mean().compute()
         logging.info("Calculation std...")
         std = ds[varname].std().compute()
+    elif feature_scaling_stats is not None:
+        mean = feature_scaling_stats['mean']
+        std = feature_scaling_stats['std']
     else:
         if (
             "mean" not in precomputed[varname].attrs
@@ -153,4 +178,52 @@ def compute_standardization(
     ds[varname].attrs["mean"] = float(mean)
     ds[varname].attrs["std"] = float(std)
 
+    return ds
+
+
+def interpolate(ds: xr.Dataset, grid: xr.Dataset) -> xr.Dataset:
+    """Regrid and interpolate input dataset to the given grid.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset to regrid and align (i.e. ERA5).
+    grid : xarray.Dataset
+        Grid to regrid to (i.e. wrf).
+
+    Returns
+    -------
+    ds : xarray.Dataset
+        Dataset regridded and aligned to the given grid.
+    """
+    # Check that inputs are xarray datasets
+    if not isinstance(ds, xr.Dataset) and not isinstance(ds, xr.DataArray):
+        raise ValueError("Input dataset is not an xarray dataset.")
+    if not isinstance(grid, xr.Dataset) and not isinstance(grid, xr.DataArray):
+        raise ValueError("Grid is not an xarray dataset.")
+
+    # Check that the grid has the correct dimensions
+    if "rlon" not in grid.dims or "rlat" not in grid.dims:
+        raise ValueError("rlon or rlat not in grid dims, check grid")
+    # Check that the dataset has the correct dimensions
+    if "lon" not in ds.coords:
+        raise ValueError("lon not in dataset dims, check dataset")
+    if "lat" not in ds.coords:
+        raise ValueError("lat not in dataset dims, check dataset")
+
+    if "lon" not in grid.coords:
+        raise ValueError("lon not in grid dims, check grid")
+    if "lat" not in grid.coords:
+        raise ValueError("lat not in grid dims, check grid")
+
+    # Check that the dataset has the correct variables
+    interp_points = xr.Dataset({
+        "lat": grid.lat,
+        "lon": grid.lon,
+    })
+    ds = ds.interp(
+        lat=interp_points["lat"],
+        lon=interp_points["lon"],
+        method="linear"
+    )
     return ds

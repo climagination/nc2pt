@@ -1,6 +1,7 @@
 from nc2pt.metadata import configure_metadata, NormalizerMetadataCollector
 from nc2pt.io import load_grid, write_to_zarr
-from nc2pt.align import run_alignment_pipeline, apply_feature_scaling
+from nc2pt.align import run_alignment_pipeline
+from nc2pt.scaling import apply_feature_scaling
 from nc2pt.climatedata import ClimateData, ClimateModel
 
 import logging
@@ -74,7 +75,8 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         logging.info(f"🎉 Done processing {climate_variable.name} in {model.info}!")
         logging.info(f"⏳ Time elapsed ⏳: {timedelta(seconds=end-start)}")
         del ds, ds_aligned
-    metadata_collector.write_all()
+
+    metadata_collector.write_all(model_name=model.name)
 
 
 def preprocess(climdata: ClimateData) -> None:

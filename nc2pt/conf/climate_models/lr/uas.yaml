@@ -5,7 +5,7 @@ name: "uas"
 alternative_names: ["U10", "u10", "uas"]
 path: ${internal.paths.lr.uas}
 is_west_negative: false
-apply_standardize: false
-apply_normalize: true
+apply_standardize: true
+apply_normalize: false
 invariant: false
 transform: []

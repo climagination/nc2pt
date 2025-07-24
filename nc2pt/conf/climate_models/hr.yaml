@@ -5,6 +5,7 @@
 _target_: nc2pt.climatedata.ClimateModel
 name: hr
 info: "High Resolution USask WRF, Western Canada"
+alignment_pipeline: ["temporal_crop", "spatial_crop", "user_defined_transforms", "split_data"]
 
 climate_variables:
   - ${internal.hr_uas}
