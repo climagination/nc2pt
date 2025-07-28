@@ -13,10 +13,10 @@ paths:
   # Shared data paths – High-Resolution WRF (HR)
   # ────────────────────────────────────────
   hr:
-    uas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/U10/*.nc
-    vas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/V10/*.nc
-    pr:  /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/PREC/*.nc
-    tas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/pgw-wrf-wca/T2/*.nc
+    uas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/U10/*.nc
+    vas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/V10/*.nc
+    pr:  /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/PREC/*.nc
+    tas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/T2/*.nc
 
   # ────────────────────────────────────────
   # Shared data paths – Low-Resolution ERA5 (LR)
