@@ -216,7 +216,7 @@ class NormalizerMetadataCollector:
         self.metadata[var_name]["units"].setdefault("original", "unknown")
         self.metadata[var_name]["units"].setdefault("post_transform", "unknown")
 
-    def write_all(self):
+    def write_all(self, model_name: str):
         """
         Write each variable's metadata to a JSON file in the output directory.
         Adds a hash field for traceability.
@@ -232,7 +232,7 @@ class NormalizerMetadataCollector:
             # Convert entire metadata dict to a plain dict recursively
             meta_clean = self._convert_nested_omegaconf(meta)
 
-            out_path = self.output_dir / f"{var_name}_normalization_metadata.json"
+            out_path = self.output_dir / f"{model_name}_{var_name}_feature_scaling_metadata.json"
             logging.info(f"📝 Writing metadata for '{var_name}' to {out_path}")
             with out_path.open("w") as f:
                 json.dump(meta_clean, f, indent=2)

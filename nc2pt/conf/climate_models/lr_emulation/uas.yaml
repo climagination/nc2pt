@@ -9,3 +9,4 @@ apply_standardize: true
 apply_normalize: false
 invariant: false
 transform: []
+metadata_path: ${internal.paths.lr_emulation.uas_metadata}

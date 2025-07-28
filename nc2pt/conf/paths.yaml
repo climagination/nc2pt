@@ -32,9 +32,14 @@ paths:
   # ────────────────────────────────────────
   hr_invariant: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
 
-
-  
-
+  # ────────────────────────────────────────
+  # User-dependent path for – Low-Resolution ERA5 Emulation Metadata (LR Emulation) 
+  # ────────────────────────────────────────
+  lr_emulation:
+    uas_metadata: /home/username/data/path/lr_uas_feature_scaling_metadata.json
+    vas_metadata: /home/username/data/path/lr_vas_feature_scaling_metadata.json
+    pr_metadata:  /home/username/data/path/lr_pr_feature_scaling_metadata.json
+    tas_metadata: /home/username/data/path/lr_tas_feature_scaling_metadata.json
 
   # ────────────────────────────────────────
   # User-dependent path for My Model Template

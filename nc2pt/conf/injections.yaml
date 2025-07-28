@@ -27,11 +27,16 @@ defaults:
   - climate_models/hr_invariant@internal._hr_invariant_model
   - climate_models/hr_invariant/topo@internal._hr_invariant_topo
 
+  # LR_emulation Model
+  - climate_models/lr_emulation@internal._lr_emulation_model
+  - climate_models/lr_emulation/uas@internal._lr_emulation_uas
+  - climate_models/lr_emulation/vas@internal._lr_emulation_vas
+  - climate_models/lr_emulation/tas@internal._lr_emulation_tas
+  - climate_models/lr_emulation/pr@internal._lr_emulation_pr
 
   # My Model Template
   - climate_models/my_model@internal._my_model
   - climate_models/my_model/uas@internal._my_model_uas
-
   # Optional: additional variables
   # - climate_models/my_model/vas@internal._my_model_vas
   # - climate_models/my_model/tas@internal._my_model_tas
@@ -58,6 +63,13 @@ internal:
   # HR Invariant aliases
   hr_invariant: ${internal._hr_invariant_model}
   hr_invariant_topo: ${internal._hr_invariant_topo}
+
+  # LR Emulation aliases
+  lr_emulation: ${internal._lr_emulation_model}
+  lr_emulation_uas: ${internal._lr_emulation_uas}
+  lr_emulation_vas: ${internal._lr_emulation_vas}
+  lr_emulation_tas: ${internal._lr_emulation_tas}
+  lr_emulation_pr: ${internal._lr_emulation_pr}
 
   # My Model Template
   my_model: ${internal._my_model}

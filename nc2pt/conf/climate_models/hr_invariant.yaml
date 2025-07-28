@@ -6,6 +6,7 @@ _target_: nc2pt.climatedata.ClimateModel
 name: hr_invariant
 info: "HR static invariant fields for WRF domain"
 engine: netcdf4
+alignment_pipeline: ['spatial_crop']
 
 climate_variables:
   - ${internal.hr_invariant_topo}

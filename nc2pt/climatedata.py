@@ -1,7 +1,9 @@
 from dataclasses import dataclass, field
 import logging
 from typing import Optional, List, Union, Any, Dict
+from pathlib import Path
 import xarray as xr
+import json
 
 
 @dataclass
@@ -22,6 +24,7 @@ class ClimateVariable:
     invariant: Optional[bool] = field(default=False)
     apply_standardize: Optional[bool] = field(default=True)
     apply_normalize: Optional[bool] = field(default=False)
+    metadata_path: Optional[str] = field(default=None)
 
 
 # Write a dataclass that loads config data from hydra-core and
@@ -34,7 +37,7 @@ class ClimateModel:
     climate_variables: List[ClimateVariable]
     hr_ref: Optional[ClimateVariable] = None
     engine: Optional[str] = None  # Optional engine override for this model
-    downsample: Optional[bool] = False  # Optional downsampling for invariant fields
+    emulation_data: Optional[bool] = False  # Optional bool to handle metadata ingestion
     alignment_pipeline: List[str] = field(default_factory=lambda: [
         "temporal_crop", "regrid", "spatial_crop", "coarsen", "user_defined_transforms", "split_data"
     ])
@@ -75,7 +78,54 @@ class ClimateData:
             logging.warning("No matching dimensions found for chunking.")
             return ds
 
-
     def __post_init__(self):
         for model in self.climate_models:
             logging.info(f"🌎 Instantiated Model with information: {model.info}")
+
+
+@dataclass
+class FeatureScalingMetadata:
+    variable: str
+    method: str  # "minmax" or "standard"
+    min: Optional[float] = None
+    max: Optional[float] = None
+    mean: Optional[float] = None
+    std: Optional[float] = None
+    apply_normalize: bool = False
+    apply_standardize: bool = False
+    transforms: List = False
+    is_west_negative: bool = False
+    spatial_scale_factor: int = 1
+    spatial_crop: Optional[dict] = None
+    hr_reference_field: Optional[str] = None
+    units: Optional[dict] = None
+    created: Optional[str] = None
+    hash: Optional[str] = None
+
+    @classmethod
+    def from_json(cls, path: Path) -> "FeatureScalingMetadata":
+        with open(path, 'r') as f:
+            data = json.load(f)
+        return cls(**data)
+
+    def get_stats(self) -> dict[str, float]:
+        if self.apply_normalize and self.method == "minmax":
+            if self.min is None or self.max is None:
+                raise ValueError("Min-max normalization requires 'min' and 'max'")
+            return {"min": self.min, "max": self.max}
+        elif self.apply_standardize and self.method == "standard":
+            if self.mean is None or self.std is None:
+                raise ValueError("Standardization requires 'mean' and 'std'")
+            return {"mean": self.mean, "std": self.std}
+        else:
+            raise ValueError(
+                f"Inconsistent method or missing stats in metadata for variable '{self.variable}'"
+            )
+
+    def validate_against_var(self, var: "ClimateVariable"):
+        if self.variable != var.name:
+            raise ValueError(f"Variable name mismatch: {self.variable} != {var.name}")
+        if self.apply_normalize != var.apply_normalize:
+            raise ValueError("Mismatch in 'apply_normalize' between var config and metadata.")
+        if self.apply_standardize != var.apply_standardize:
+            raise ValueError("Mismatch in 'apply_standardize' between var config and metadata.")
