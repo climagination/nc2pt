@@ -201,7 +201,7 @@ To add a new variable to an existing model (e.g., `hr`):
 	```
 
 3.  **Add it to the model’s variable list**  
-    In `conf/climate_models/hr/model.yaml`:
+    In `conf/climate_models/hr.yaml`:
     
 	   ``` yaml
 	    climate_variables:
