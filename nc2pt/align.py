@@ -143,7 +143,7 @@ def apply_coarsen(ds: xr.DataArray,
         Coarsened dataset.
     """
     scale_factor = climdata.select.spatial.scale_factor
-    coarsen_lr(ds, scale_factor)
+    ds = coarsen_lr(ds, scale_factor)
     logging.info(f"🪛  Coarsened field by a factor of {scale_factor}")
     return ds
 
