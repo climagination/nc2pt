@@ -8,4 +8,5 @@ is_west_negative: true
 apply_standardize: false
 apply_normalize: true
 invariant: false
+coarsening_method: "mean"
 transform: []

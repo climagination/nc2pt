@@ -8,4 +8,5 @@ is_west_negative: false
 apply_standardize: false
 apply_normalize: true
 invariant: false
+coarsening_method: "mean"
 transform: ["x * 3600"]

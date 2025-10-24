@@ -128,7 +128,7 @@ def crop_field(ds: xr.DataArray, scale_factor: int, x: dict, y: dict, downsample
     return ds
 
 
-def coarsen_lr(ds: xr.DataArray, scale_factor: int) -> xr.DataArray:
+def coarsen_lr(ds: xr.DataArray, scale_factor: int, method: str = 'mean') -> xr.DataArray:
     """Coarsen the low resolution dataset.
 
     Parameters
@@ -137,13 +137,24 @@ def coarsen_lr(ds: xr.DataArray, scale_factor: int) -> xr.DataArray:
         Dataset to coarsen.
     scale_factor : int
         Scale factor of the dataset.
+    method : str, optional
+        Coarsening method: e.g., 'mean', 'max', 'min', 'median'.
+        Default is 'mean'.
 
     Returns
     -------
     ds : xarray.Dataset
         Coarsened dataset.
     """
+    coarsen_obj = ds.coarsen(rlon=scale_factor, rlat=scale_factor)
 
-    ds = ds.coarsen(rlon=scale_factor, rlat=scale_factor).mean()
+    # Check if the given method is a valid method of xarray's coarsen object
+    if not hasattr(coarsen_obj, method):
+        raise AttributeError(
+            f"Unknown coarsening method: '{method}'. "
+            f"Refer to xarray documentation for valid aggregation methods."
+        )
+
+    ds = getattr(coarsen_obj, method)()
 
     return ds
