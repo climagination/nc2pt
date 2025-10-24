@@ -25,6 +25,7 @@ class ClimateVariable:
     apply_standardize: Optional[bool] = field(default=True)
     apply_normalize: Optional[bool] = field(default=False)
     metadata_path: Optional[str] = field(default=None)
+    coarsening_method: Optional[str] = field(default='mean')
 
 
 # Write a dataclass that loads config data from hydra-core and
