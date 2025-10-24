@@ -151,10 +151,10 @@ def coarsen_lr(ds: xr.DataArray, scale_factor: int, method: str = 'mean') -> xr.
     # Check if the given method is a valid method of xarray's coarsen object
     if not hasattr(coarsen_obj, method):
         raise AttributeError(
-            f"Unknown coarsening method: '{method}'."
+            f"Unknown coarsening method: '{method}'. "
             f"Refer to xarray documentation for valid aggregation methods."
         )
-    
+
     ds = getattr(coarsen_obj, method)()
 
     return ds
