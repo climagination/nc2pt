@@ -29,13 +29,13 @@ def user_defined_transform(ds: xr.Dataset, var: ClimateVariable) -> xr.Dataset:
 
     for transform in var.transform:
         try:
-            x = 1.0  # noqa: F841
-            eval(transform)  # x is implicitly a variable from the config
+            x = 1.0
+            eval(transform, {"np": np, "x": x})  # x is implicitly a variable from the config
         except SyntaxError:
             raise SyntaxError(f"Invalid transform in config {transform}.")
 
         def func(x):
-            return eval(transform)
+            return eval(transform, {"np": np, "x": x})
 
         logging.info(f"🧮 Applying transform {transform} to {var.name}...")
         ds[var.name] = xr.apply_ufunc(func, ds[var.name], dask="parallelized")
