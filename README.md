@@ -42,6 +42,18 @@ High-level workflow
 8. `nc2pt/tools/zarr_to_torch.py` - writes to PyTorch files
 9. `nc2pt/tools/single_file_to_batches.py` - batches the single PyTorch files
 
+## Special Scaling for Precipitation
+
+When preprocessing with nc2pt, precipitation (pr) is handled differently:
+* A log-transform is automatically applied to precipitation values, with a small constant ϵ = 10 **-3:
+		scaled = log(P+ϵ) - log(ϵ)/ log(max(P)+ϵ) - log(ϵ)
+
+* This normalization is applied to the pr variable alone, other variables use standard normalization.
+
+* Specifying a log-transform for pr is not required as it will cause the log-transformed twice.
+
+* A log message will inform you each time this special scaling is performed.
+
 ## Customizable Pipelines 🚦
 
 Each model can define its own custom preprocessing steps by listing them in order via the `alignment_pipeline` field of the model YAML. Steps include:

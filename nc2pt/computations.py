@@ -91,6 +91,9 @@ def compute_normalization(ds, varname, precomputed=None, feature_scaling_stats=N
         ds[varname] = (np.log(ds[varname] + eps) - np.log(eps)) / (
             np.log(max + eps) - np.log(eps)
         )
+        logging.info(
+        "Applied log-transform + min-max scaling to precipitation ('pr'). See README for more details."
+    )
     else:
         ds[varname] = (ds[varname] - min) / (max - min)
 
