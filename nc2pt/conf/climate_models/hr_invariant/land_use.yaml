@@ -1,0 +1,11 @@
+# Topography used in WRF simulations (HR Model)
+
+_target_: nc2pt.climatedata.ClimateVariable
+name: "land_use"
+alternative_names: ["LU_INDEX"]
+path: ${internal.paths.hr_invariant}
+is_west_negative: false
+invariant: true
+apply_standardize: false
+apply_normalize: true
+transform: []

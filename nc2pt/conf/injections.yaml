@@ -26,6 +26,9 @@ defaults:
   # HR Invariant Model
   - climate_models/hr_invariant@internal._hr_invariant_model
   - climate_models/hr_invariant/topo@internal._hr_invariant_topo
+  - climate_models/hr_invariant/land_mask@internal._hr_invariant_land_mask
+  - climate_models/hr_invariant/land_use@internal._hr_invariant_land_use
+  - climate_models/hr_invariant/surface_roughness@internal._hr_invariant_surface_roughness
 
   # LR_emulation Model
   - climate_models/lr_emulation@internal._lr_emulation_model
@@ -63,6 +66,9 @@ internal:
   # HR Invariant aliases
   hr_invariant: ${internal._hr_invariant_model}
   hr_invariant_topo: ${internal._hr_invariant_topo}
+  hr_invariant_land_mask: ${internal._hr_invariant_land_mask}
+  hr_invariant_land_use: ${internal._hr_invariant_land_use}
+  hr_invariant_surface_roughness: ${internal._hr_invariant_surface_roughness}
 
   # LR Emulation aliases
   lr_emulation: ${internal._lr_emulation_model}

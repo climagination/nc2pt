@@ -7,16 +7,16 @@ paths:
   # ────────────────────────────────────────
   # User-dependent path for HR reference grid
   # ────────────────────────────────────────
-  hr_ref: /home/username/projects/nc2pt/nc2pt/data/hr_ref.nc
+  hr_ref: /home/sbeairsto/data-sbeairsto/van_isle_128/ubc_wrf_staticfields_d03.nc
 
   # ────────────────────────────────────────
   # Shared data paths – High-Resolution WRF (HR)
   # ────────────────────────────────────────
   hr:
-    uas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/U10/*.nc
-    vas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/V10/*.nc
-    pr:  /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/PREC/*.nc
-    tas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/T2/*.nc
+    uas: /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
+    vas: /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
+    pr:  /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
+    tas: /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
 
   # ────────────────────────────────────────
   # Shared data paths – Low-Resolution ERA5 (LR)
@@ -30,16 +30,16 @@ paths:
   # ────────────────────────────────────────
   # Shared invariant fields (e.g., orography, landmask)
   # ────────────────────────────────────────
-  hr_invariant: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
+  hr_invariant: /home/sbeairsto/data-sbeairsto/van_isle_128/ubc_wrf_staticfields_d03.nc
 
   # ────────────────────────────────────────
   # User-dependent path for – Low-Resolution ERA5 Emulation Metadata (LR Emulation) 
   # ────────────────────────────────────────
   lr_emulation:
-    uas_metadata: /home/username/data/path/lr_uas_feature_scaling_metadata.json
-    vas_metadata: /home/username/data/path/lr_vas_feature_scaling_metadata.json
-    pr_metadata:  /home/username/data/path/lr_pr_feature_scaling_metadata.json
-    tas_metadata: /home/username/data/path/lr_tas_feature_scaling_metadata.json
+    uas_metadata: /home/sbeairsto/data-sbeairsto/van_isle_128/lr_uas_feature_scaling_metadata.json
+    vas_metadata: /home/sbeairsto/data-sbeairsto/van_isle_128/lr_vas_feature_scaling_metadata.json
+    pr_metadata:  /home/sbeairsto/data-sbeairsto/van_isle_128/lr_pr_feature_scaling_metadata.json
+    tas_metadata: /home/sbeairsto/data-sbeairsto/van_isle_128/lr_tas_feature_scaling_metadata.json
 
   # ────────────────────────────────────────
   # User-dependent path for My Model Template
