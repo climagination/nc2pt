@@ -2,7 +2,7 @@
 
 _target_: nc2pt.climatedata.ClimateVariable
 name: "pr"
-alternative_names: ["PREC","PSFC"]
+alternative_names: ["PREC"]
 path:  ${internal.paths.hr.pr}
 is_west_negative: true
 apply_standardize: false
