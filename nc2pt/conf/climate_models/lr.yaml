@@ -12,7 +12,7 @@ alignment_pipeline: ["temporal_crop", "regrid", "spatial_crop", "coarsen", "user
 hr_ref:
   _target_: nc2pt.climatedata.ClimateVariable
   name: "hr_ref"
-  alternative_names: ["T2"]
+  alternative_names: ["HGT"]
   path: ${internal.paths.hr_ref}
   is_west_negative: true
   invariant: true
@@ -20,6 +20,6 @@ hr_ref:
 climate_variables:
   # Activate variables to include in the LR model
   - ${internal.lr_uas}
-  #- ${internal.lr_vas}
-  #- ${internal.lr_tas}
-  #- ${internal.lr_pr}
+  - ${internal.lr_vas}
+  - ${internal.lr_tas}
+  - ${internal.lr_pr}

@@ -7,7 +7,7 @@ paths:
   # ────────────────────────────────────────
   # User-dependent path for HR reference grid
   # ────────────────────────────────────────
-  hr_ref: /home/sbeairsto/data-sbeairsto/van_isle_128/ubc_wrf_staticfields_d03.nc
+  hr_ref: /net/venus/kenes/data/sbeairsto/UBC_WRF/ubc_wrf_staticfields_d03.nc # UBC_WRF reference grid (should be accessible to everyone)
 
   # ────────────────────────────────────────
   # Shared data paths – High-Resolution WRF (HR)
@@ -30,16 +30,16 @@ paths:
   # ────────────────────────────────────────
   # Shared invariant fields (e.g., orography, landmask)
   # ────────────────────────────────────────
-  hr_invariant: /home/sbeairsto/data-sbeairsto/van_isle_128/ubc_wrf_staticfields_d03.nc
+  hr_invariant: /net/venus/kenes/data/sbeairsto/UBC_WRF/ubc_wrf_staticfields_d03.nc # UBC_WRF static fields (should be accessible to everyone)
 
   # ────────────────────────────────────────
   # User-dependent path for – Low-Resolution ERA5 Emulation Metadata (LR Emulation) 
   # ────────────────────────────────────────
   lr_emulation:
-    uas_metadata: /home/sbeairsto/data-sbeairsto/van_isle_128/lr_uas_feature_scaling_metadata.json
-    vas_metadata: /home/sbeairsto/data-sbeairsto/van_isle_128/lr_vas_feature_scaling_metadata.json
-    pr_metadata:  /home/sbeairsto/data-sbeairsto/van_isle_128/lr_pr_feature_scaling_metadata.json
-    tas_metadata: /home/sbeairsto/data-sbeairsto/van_isle_128/lr_tas_feature_scaling_metadata.json
+      uas_metadata: /home/username/data/path/lr_uas_feature_scaling_metadata.json
+      vas_metadata: /home/username/data/path/lr_vas_feature_scaling_metadata.json
+      pr_metadata:  /home/username/data/path/lr_pr_feature_scaling_metadata.json
+      tas_metadata: /home/username/data/path/lr_tas_feature_scaling_metadata.json
 
   # ────────────────────────────────────────
   # User-dependent path for My Model Template

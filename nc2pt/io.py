@@ -1,21 +1,34 @@
 from datetime import datetime
 import xarray as xr
+import pandas as pd
+import re
+from pathlib import Path
 
 
-def load_grid(path: str, engine: str = "netcdf4", chunks: int = 250) -> xr.Dataset:
+def load_grid(path: str, engine: str = "netcdf4", loader: str = "default", chunks: int = 250) -> xr.Dataset:
     """Load the grid to regrid to.
 
     Parameters
     ----------
     path : str
         Path to the grid to regrid to.
+    engine : str
+        Engine to use for loading.
+    chunks : int
+        Chunk size for dask.
+    loader : str
+        Loader type: 'default', 'ubc_wrf'
 
     Returns
     -------
     grid : xarray.Dataset
         Grid to regrid to.
     """
+    if loader == "ubc_wrf":
+        from ubc_wrf_io import load_ubc_wrf
+        return load_ubc_wrf(path, engine=engine, chunks=chunks)
 
+    # Default loader
     if "*" in path or isinstance(path, list):
         with xr.open_mfdataset(path, engine=engine, parallel=True, chunks="auto") as ds:
             return ds
