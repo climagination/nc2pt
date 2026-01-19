@@ -22,4 +22,4 @@ climate_variables:
   - ${internal.lr_uas}
   - ${internal.lr_vas}
   - ${internal.lr_tas}
-  - ${internal.lr_pr}
+  - ${internal.lr_ps}

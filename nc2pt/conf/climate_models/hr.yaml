@@ -12,4 +12,4 @@ climate_variables:
   - ${internal.hr_uas}
   - ${internal.hr_vas}
   - ${internal.hr_tas}
-  - ${internal.hr_pr}
+  - ${internal.hr_ps}

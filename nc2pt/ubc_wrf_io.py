@@ -3,28 +3,17 @@
 import xarray as xr
 import pandas as pd
 import re
-import pickle
 from pathlib import Path
 
 
-def get_ubc_wrf_file_list(pattern: str, cache_file: str = None) -> list:
-    """Get file list with optional caching."""
+def get_ubc_wrf_file_list(pattern: str) -> list:
+    """Get file list"""
     import glob
-    
-    if cache_file and Path(cache_file).exists():
-        print(f"Loading cached file list from {cache_file}")
-        with open(cache_file, 'rb') as f:
-            return pickle.load(f)
-    
-    print(f"Scanning for files (this may take ~30s over NFS)...")
+
+    print("Scanning for files (this may take ~30s over NFS)...")
     files = sorted(glob.glob(pattern, recursive=True))
-    
-    if cache_file:
-        print(f"Caching {len(files)} files to {cache_file}")
-        Path(cache_file).parent.mkdir(parents=True, exist_ok=True)
-        with open(cache_file, 'wb') as f:
-            pickle.dump(files, f)
-    
+    print(f"Found {len(files)} files")
+
     return files
 
 
@@ -32,7 +21,7 @@ def add_ubc_wrf_timesteps(ds):
     """
     Preprocess WRF metgrid files with dummy Time coordinate.
     Extracts date from filename and creates proper time axis.
-    Drops first timestep (spin-up).
+    Drops last timestep (corresponding to next month's 00:00:00).
     """
     # Get filename from dataset encoding
     filepath = ds.encoding.get('source', '')
@@ -44,7 +33,7 @@ def add_ubc_wrf_timesteps(ds):
         year, month = match.groups()
         start_date = f"{year}-{month}-01"
         
-        # Drop first timestep (spin-up)
+        # Drop last timestep (spin-up for next month)
         ds = ds.isel(Times=slice(None, -1))
         
         # Create time coordinates for remaining timesteps
@@ -64,13 +53,13 @@ def load_ubc_wrf(path: str, engine: str = "netcdf4", chunks: str = "auto") -> xr
     
     if "*" in path or isinstance(path, list):
         if isinstance(path, str):
-            # Use cache to avoid slow glob over NFS
-            cache_file = f"/tmp/wrf_files_cache_{hash(path)}.pkl"
-            file_list = get_ubc_wrf_file_list(path, cache_file=cache_file)
+            file_list = get_ubc_wrf_file_list(path)
         else:
             file_list = path
         
         print(f"Opening {len(file_list)} files...")
+        print("Note: Dropping last timestep of each month (corresponds to M+1 00:00:00)")  # Log once here
+        
         ds = xr.open_mfdataset(
             file_list,
             engine=engine,
@@ -80,14 +69,11 @@ def load_ubc_wrf(path: str, engine: str = "netcdf4", chunks: str = "auto") -> xr
             combine='nested',
             concat_dim='Times',
             combine_attrs='override',
-            data_vars='minimal',      # Add these
-            coords='minimal',          # for speed
+            data_vars='minimal',
+            coords='minimal',
             compat='override'
         )
         return ds
     else:
         ds = xr.open_dataset(path, engine=engine, chunks=chunks)
         return add_ubc_wrf_timesteps(ds)
-    
-
-    
