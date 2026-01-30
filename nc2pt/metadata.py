@@ -378,11 +378,11 @@ def flatten_2D_forecast_time(ds: xr.Dataset) -> xr.Dataset:
         Dataset with stacked 'time' dimension based on valid forecast time.
     """
     init, hour = xr.broadcast(ds.forecast_initial_time, ds.forecast_hour)
-    valid_time = init + hour.astype("timedelta64[ns]")
+    valid_time = init + hour.astype("timedelta64[h]")
+
     ds = ds.stack(time=("forecast_initial_time", "forecast_hour"))
-    ds = ds.drop_vars(["time", "forecast_initial_time", "forecast_hour"])
-    ds = ds.assign_coords(time=("time", valid_time.values.ravel()))
-    ds = ds.assign_coords(time=("time", valid_time.values.ravel()))
+    ds = ds.reset_index("time", drop=True)
+    ds["time"] = valid_time.stack(time=("forecast_initial_time", "forecast_hour")).values
     return ds
 
 

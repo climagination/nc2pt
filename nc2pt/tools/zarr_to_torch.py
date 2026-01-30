@@ -77,14 +77,14 @@ def loop_over_variables(climate_data, model, var, s):
             for i in indices
         ]
 
-        pool_tuple = zip(
+        pool_tuple = list(zip(
             indices,
             partial_paths,
             ds[var.name].transpose(*[dim for dim in chunks.keys() if dim in ds[var.name].dims]),
-        )
+        ))
 
         progress_starmap(
-            parallel_loop, pool_tuple, total=ds.time.size, n_cpu=24, chunk_size=1
+            parallel_loop, pool_tuple, total=len(pool_tuple), n_cpu=24, chunk_size=1
         )
 
 
