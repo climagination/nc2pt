@@ -9,7 +9,8 @@ alignment_pipeline: ["temporal_crop", "spatial_crop", "user_defined_transforms",
 loader: "ubc_wrf"
 
 climate_variables:
-  - ${internal.hr_uas}
-  - ${internal.hr_vas}
+  #- ${internal.hr_uas}
+  #- ${internal.hr_vas}
   - ${internal.hr_tas}
-  - ${internal.hr_ps}
+  #- ${internal.hr_ps}
+  - ${internal.hr_pr}

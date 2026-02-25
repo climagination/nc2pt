@@ -1,11 +1,12 @@
-# Surface pressure from WRF (HR Model)
+# Near-surface pressure from ERA 5 (LR Model)
 
 _target_: nc2pt.climatedata.ClimateVariable
 name: "ps"
 alternative_names: ["PSFC"]
-path:  ${internal.paths.hr.ps}
+path: ${internal.paths.lr.ps}
 is_west_negative: true
 apply_standardize: false
 apply_normalize: true
 invariant: false
 transform: []
+metadata_path: ${internal.paths.lr_emulation.ps_metadata}

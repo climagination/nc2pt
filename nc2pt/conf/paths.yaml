@@ -15,8 +15,9 @@ paths:
   hr:
     uas: /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
     vas: /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
-    pr:  /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
+    pr:  /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_RAIN_d03_metgrid_*.nc  
     tas: /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
+    ps:  /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
 
   # ────────────────────────────────────────
   # Shared data paths – Low-Resolution ERA5 (LR)
@@ -26,6 +27,7 @@ paths:
     vas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/vas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
     pr:  /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/pr_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc
     tas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+    ps:  /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/ps_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc
 
   # ────────────────────────────────────────
   # Shared invariant fields (e.g., orography, landmask)
@@ -40,6 +42,7 @@ paths:
       vas_metadata: /home/username/data/path/lr_vas_feature_scaling_metadata.json
       pr_metadata:  /home/username/data/path/lr_pr_feature_scaling_metadata.json
       tas_metadata: /home/username/data/path/lr_tas_feature_scaling_metadata.json
+      ps_metadata:  /home/username/data/path/lr_ps_feature_scaling_metadata.json
 
   # ────────────────────────────────────────
   # User-dependent path for My Model Template

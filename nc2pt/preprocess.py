@@ -43,6 +43,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         engine = model.engine or climdata.compute.engine
         loader = model.loader
 
+        logging.info(f"Loading {climate_variable.name} data")
         ds = load_grid(climate_variable.path, engine=engine, loader=loader)
 
         start = timer()

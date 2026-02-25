@@ -1,3 +1,5 @@
+# Surface pressure from ERA5 (LR Model)
+
 _target_: nc2pt.climatedata.ClimateVariable
 name: "ps"
 alternative_names: ["PSFC"]
