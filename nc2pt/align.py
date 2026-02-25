@@ -2,7 +2,7 @@ import logging
 from typing import Callable
 import xarray as xr
 
-from nc2pt.climatedata import ClimateData, ClimateModel, ClimateVariable
+from nc2pt.climatedata import ClimateData, ClimateModel, ClimateVariable, FeatureScalingMetadata
 from nc2pt.computations import user_defined_transform, interpolate
 from nc2pt.utils import slice_time, train_test_split, crop_field, coarsen_lr
 
@@ -211,11 +211,14 @@ def apply_data_split(ds: xr.DataArray,
     return full_ds
 
 
-def run_alignment_pipeline(ds: xr.DataArray,
-                           var: ClimateVariable,
-                           model: ClimateModel,
-                           climdata: ClimateData,
-                           hr_ref: xr.DataArray) -> dict[str, xr.DataArray]:
+def run_alignment_pipeline(
+    ds: xr.DataArray,
+    var: ClimateVariable,
+    model: ClimateModel,
+    climdata: ClimateData,
+    hr_ref: xr.DataArray,
+    metadata_collector: FeatureScalingMetadata = None
+) -> dict[str, xr.DataArray]:
     """
     Execute the alignment pipeline for a given climate model.
 
@@ -224,13 +227,15 @@ def run_alignment_pipeline(ds: xr.DataArray,
     ds : xr.DataArray
         Input dataset to process.
     var : ClimateVariable
-        Climate variable containing custom transformation proceedures.
+        Climate variable containing custom transformation procedures.
     model : ClimateModel
         Climate model containing the alignment pipeline steps.
     climdata : ClimateData
         Global configuration for the preprocessing run.
     hr_ref : xr.DataArray
         Optional high-resolution reference field for regridding.
+    metadata_collector : FeatureScalingMetadata, optional
+        Collector for saving grid and metadata.
 
     Returns
     -------
@@ -250,6 +255,7 @@ def run_alignment_pipeline(ds: xr.DataArray,
 
     if not isinstance(ds, dict):
         ds = {"full": ds}
+
     return ds
 
 
