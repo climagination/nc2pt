@@ -34,6 +34,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         hr_ref = load_grid(model.hr_ref.path, engine=climdata.compute.engine)
         logging.info("👀 Processing high resolution reference field...")
         hr_ref = configure_metadata_fn(hr_ref, instantiate(model.hr_ref))
+        metadata_collector.save_grid_if_needed(hr_ref, model.name, climdata)
     else: hr_ref = None
 
     for climate_variable in model.climate_variables:
@@ -52,7 +53,7 @@ def preprocess_variables(model: ClimateModel, climdata: ClimateData) -> None:
         ds = configure_metadata_fn(ds, climate_variable)
         metadata_collector.log_variable_units_from_dataset(climate_variable.name, ds)
         ds = climdata.apply_chunks(ds)
-        ds_aligned = run_alignment_pipeline(ds, climate_variable, model, climdata, hr_ref)
+        ds_aligned = run_alignment_pipeline(ds, climate_variable, model, climdata, hr_ref, metadata_collector)
         ds_aligned = apply_feature_scaling(ds_aligned, climate_variable, model)
         reference_key = "train" if "train" in ds_aligned else "full"
 
