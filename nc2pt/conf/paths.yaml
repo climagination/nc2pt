@@ -7,7 +7,7 @@ paths:
   # ────────────────────────────────────────
   # User-dependent path for HR reference grid
   # ────────────────────────────────────────
-  hr_ref: /home/username/projects/nc2pt/nc2pt/data/hr_ref.nc
+  hr_ref: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
 
   # ────────────────────────────────────────
   # Shared data paths – High-Resolution WRF (HR)
