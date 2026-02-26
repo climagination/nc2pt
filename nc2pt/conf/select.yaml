@@ -19,8 +19,8 @@ select:
   spatial:
     scale_factor: 8  # Factor to downscale HR data to LR
     x:
-      first_index: 110
-      last_index: 622
+      first_index: 125
+      last_index: 253
     y:
-      first_index: 20
-      last_index: 532
+      first_index: 100
+      last_index: 228

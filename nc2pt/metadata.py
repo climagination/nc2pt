@@ -1,13 +1,18 @@
 import json
 import hashlib
+from typing import Optional
 from datetime import datetime
 from pathlib import Path
+import pandas as pd
 import logging
 from hydra.utils import instantiate
 from typing import Union, List
-from nc2pt.climatedata import ClimateDimension, ClimateVariable, ClimateData
 import xarray as xr
 from omegaconf import DictConfig, ListConfig, OmegaConf
+
+from nc2pt.climatedata import ClimateDimension, ClimateVariable, ClimateData
+from nc2pt.utils import crop_field
+
 
 
 class MultipleKeys(Exception):
@@ -41,6 +46,8 @@ class NormalizerMetadataCollector:
         self.metadata = {}
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.grid_dir = self.output_dir / "grid"
+        self._grid_saved = {}
         logging.info(f"📁 NormalizerMetadataCollector initialized with output dir: {self.output_dir}")
 
     def _compute_hash(self, data: dict) -> str:
@@ -122,7 +129,7 @@ class NormalizerMetadataCollector:
             if model.name == model_name and model.hr_ref is not None:
                 return model.hr_ref.path
         return None
-    
+
     def _convert_nested_omegaconf(self, obj):
         """
         Recursively convert any OmegaConf DictConfig or ListConfig to plain Python dicts/lists.
@@ -145,6 +152,132 @@ class NormalizerMetadataCollector:
             return [self._convert_nested_omegaconf(v) for v in obj]
         else:
             return obj
+
+    def _create_grid_dataset(self, hr_dataset: xr.Dataset) -> Optional[xr.Dataset]:
+        """
+        Create minimal grid dataset with coordinates and projection info.
+
+        Args:
+            hr_dataset: High-resolution dataset with lat/lon coordinates
+
+        Returns:
+            Grid dataset, or None if required coordinates missing
+        """
+        if 'lat' not in hr_dataset.coords or 'lon' not in hr_dataset.coords:
+            logging.warning(f"⚠ Dataset missing lat/lon coordinates, skipping grid save")
+            return None
+
+        if 'rlat' not in hr_dataset.dims or 'rlon' not in hr_dataset.dims:
+            logging.warning(f"⚠ Dataset missing rlat/rlon dimensions, skipping grid save")
+            return None
+
+        grid_ds = xr.Dataset(
+            coords={
+                'rlat': hr_dataset.rlat,
+                'rlon': hr_dataset.rlon,
+                'lat': (['rlat', 'rlon'], hr_dataset.lat.values),
+                'lon': (['rlat', 'rlon'], hr_dataset.lon.values),
+            }
+        )
+
+        for proj_var in ['rotated_pole', 'rotated_latitude_longitude']:
+            if proj_var in hr_dataset:
+                grid_ds[proj_var] = hr_dataset[proj_var]
+                break
+
+        for coord in ['lat', 'lon', 'rlat', 'rlon']:
+            if coord in hr_dataset.coords and hr_dataset[coord].attrs:
+                grid_ds[coord].attrs.update(hr_dataset[coord].attrs)
+
+        return grid_ds
+
+    def _add_grid_metadata(
+        self,
+        grid_ds: xr.Dataset,
+        model_name: str,
+        spatial_crop: Optional[dict] = None
+    ) -> xr.Dataset:
+        """
+        Add metadata attributes to grid dataset.
+
+        Args:
+            grid_ds: Grid dataset
+            model_name: Name of the model
+            spatial_crop: Crop indices used
+
+        Returns:
+            Grid dataset with metadata added
+        """
+        grid_ds.attrs.update({
+            'description': 'Target grid definition for downscaled climate data',
+            'title': f'Target grid for {model_name} preprocessing',
+            'created': pd.Timestamp.now().isoformat(),
+            'source': 'nc2pt preprocessing pipeline',
+            'model': model_name,
+            'purpose': 'Geospatial coordinates for data regridded/cropped to this domain',
+        })
+
+        if spatial_crop:
+            grid_ds.attrs['spatial_crop_x'] = f"{spatial_crop['x'][0]}:{spatial_crop['x'][1]}"
+            grid_ds.attrs['spatial_crop_y'] = f"{spatial_crop['y'][0]}:{spatial_crop['y'][1]}"
+
+        return grid_ds
+
+    def save_grid_if_needed(
+        self, 
+        hr_dataset: xr.Dataset, 
+        model_name: str,
+        climdata: ClimateData
+    ) -> Optional[str]:
+        """
+        Crop and save target grid definition for model if not already saved.
+        
+        This saves the high-resolution target grid that variables are
+        regridded/aligned to during preprocessing.
+        
+        Args:
+            hr_dataset: High-resolution dataset before cropping
+            model_name: Name of the model
+            climdata: Global configuration containing spatial crop settings
+            
+        Returns:
+            Relative path to grid file, or None if not saved
+        """
+        if model_name in self._grid_saved:
+            logging.debug(f"📐 Target grid for {model_name} already saved")
+            return self._grid_saved[model_name]
+        
+        # Crop the HR grid using config settings
+        hr_dataset = crop_field(
+            hr_dataset,
+            climdata.select.spatial.scale_factor,
+            climdata.select.spatial.x,
+            climdata.select.spatial.y
+        )
+        
+        grid_ds = self._create_grid_dataset(hr_dataset)
+        if grid_ds is None:
+            return None
+        
+        # Extract spatial crop info from config
+        spatial_crop = {
+            'x': [climdata.select.spatial.x.first_index, 
+                climdata.select.spatial.x.last_index],
+            'y': [climdata.select.spatial.y.first_index, 
+                climdata.select.spatial.y.last_index]
+        }
+        
+        grid_ds = self._add_grid_metadata(grid_ds, model_name, spatial_crop)
+        
+        self.grid_dir.mkdir(parents=True, exist_ok=True)
+        grid_file = self.grid_dir / "hr_target_grid.nc"
+        
+        grid_ds.to_netcdf(grid_file)
+        logging.info(f"📐 Saved target grid definition: {grid_file}")
+        
+        relative_path = f"../grid/hr_target_grid.nc"
+        self._grid_saved[model_name] = relative_path
+        return relative_path
 
     def log_variable_units_from_dataset(self, variable_name: str, ds: xr.Dataset) -> None:
         """
@@ -210,6 +343,9 @@ class NormalizerMetadataCollector:
             "hr_reference_field": self._get_hr_ref_path(climate_data, model_name),
             "created": datetime.utcnow().isoformat() + "Z",
         })
+
+        if model_name in self._grid_saved:
+            self.metadata[var_name]["grid_file"] = self._grid_saved[model_name]
 
         # Ensure 'units' dict exists and has both keys set
         self.metadata[var_name].setdefault("units", {})
@@ -431,3 +567,6 @@ def drop_unused_variables(
     ds = ds.drop_vars(to_drop, errors="ignore")
 
     return ds
+
+
+
