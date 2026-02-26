@@ -155,22 +155,23 @@ class NormalizerMetadataCollector:
 
     def _create_grid_dataset(self, hr_dataset: xr.Dataset) -> Optional[xr.Dataset]:
         """
-        Create minimal grid dataset with coordinates and projection info.
-
+        Create minimal grid dataset with coordinates.
+        
         Args:
             hr_dataset: High-resolution dataset with lat/lon coordinates
-
+            
         Returns:
             Grid dataset, or None if required coordinates missing
         """
         if 'lat' not in hr_dataset.coords or 'lon' not in hr_dataset.coords:
             logging.warning(f"⚠ Dataset missing lat/lon coordinates, skipping grid save")
             return None
-
+        
         if 'rlat' not in hr_dataset.dims or 'rlon' not in hr_dataset.dims:
             logging.warning(f"⚠ Dataset missing rlat/rlon dimensions, skipping grid save")
             return None
-
+        
+        # Create grid dataset with just coordinates (no projection info)
         grid_ds = xr.Dataset(
             coords={
                 'rlat': hr_dataset.rlat,
@@ -179,16 +180,12 @@ class NormalizerMetadataCollector:
                 'lon': (['rlat', 'rlon'], hr_dataset.lon.values),
             }
         )
-
-        for proj_var in ['rotated_pole', 'rotated_latitude_longitude']:
-            if proj_var in hr_dataset:
-                grid_ds[proj_var] = hr_dataset[proj_var]
-                break
-
+        
+        # Copy coordinate attributes
         for coord in ['lat', 'lon', 'rlat', 'rlon']:
             if coord in hr_dataset.coords and hr_dataset[coord].attrs:
                 grid_ds[coord].attrs.update(hr_dataset[coord].attrs)
-
+        
         return grid_ds
 
     def _add_grid_metadata(
