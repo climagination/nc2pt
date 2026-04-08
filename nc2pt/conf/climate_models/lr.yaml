@@ -19,7 +19,8 @@ hr_ref:
 
 climate_variables:
   # Activate variables to include in the LR model
-  - ${internal.lr_uas}
-  - ${internal.lr_vas}
-  - ${internal.lr_tas}
-  - ${internal.lr_ps}
+  # - ${internal.lr_uas}
+  # - ${internal.lr_vas}
+  # - ${internal.lr_tas}
+  # - ${internal.lr_ps}
+   - ${internal.lr_pr}

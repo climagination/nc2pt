@@ -50,10 +50,12 @@ def add_ubc_wrf_timesteps(ds):
         year, month = match.groups()
         start_date = f"{year}-{month}-01"
 
+        # rename 'time' to 'Times' in precip files
+        ds = ds.rename({'time': 'Times'})
         
-        
-        # Drop last timestep (spin-up for next month)
-        ds = ds.isel(Times=slice(None, -1))
+        # If there are days*hours+1 timesteps drop last timestep (spin-up for next month)
+        if len(ds.Times)%24 == 1:
+            ds = ds.isel(Times=slice(None, -1))
         
         # Create time coordinates for remaining timesteps
         n_times = ds.sizes['Times']

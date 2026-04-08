@@ -86,16 +86,16 @@ def compute_normalization(ds, varname, precomputed=None, feature_scaling_stats=N
     if min == max:
         raise ZeroDivisionError("Min and max are equal.")
 
-    if varname == "pr":
-        eps = 10**-3
-        ds[varname] = (np.log(ds[varname] + eps) - np.log(eps)) / (
-            np.log(max + eps) - np.log(eps)
-        )
-        logging.info(
-        "Applied log-transform + min-max scaling to precipitation ('pr'). See README for more details."
-    )
-    else:
-        ds[varname] = (ds[varname] - min) / (max - min)
+    # if varname == "pr":
+    #     eps = 10**-3
+    #     ds[varname] = (np.log(ds[varname] + eps) - np.log(eps)) / (
+    #         np.log(max + eps) - np.log(eps)
+    #     )
+    #     logging.info(
+    #     "Applied log-transform + min-max scaling to precipitation ('pr'). See README for more details."
+    # )
+    # else:
+    ds[varname] = (ds[varname] - min) / (max - min)
 
     ds[varname].attrs["min"] = float(min)
     ds[varname].attrs["max"] = float(max)

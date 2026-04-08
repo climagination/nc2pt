@@ -516,6 +516,7 @@ def flatten_2D_forecast_time(ds: xr.Dataset) -> xr.Dataset:
     ds = ds.stack(time=("forecast_initial_time", "forecast_hour"))
     ds = ds.reset_index("time", drop=True)
     ds["time"] = valid_time.stack(time=("forecast_initial_time", "forecast_hour")).values
+    logging.info("Detected forecast dimensions: flattening forecast_initial_time and forecast_hour into single time coordinate")
     return ds
 
 
