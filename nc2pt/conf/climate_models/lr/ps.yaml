@@ -1,0 +1,11 @@
+# Surface pressure from ERA5 (LR Model)
+
+_target_: nc2pt.climatedata.ClimateVariable
+name: "ps"
+alternative_names: ["PSFC"]
+path:  ${internal.paths.lr.ps}
+is_west_negative: false
+apply_standardize: false
+apply_normalize: true
+invariant: false
+transform: []

@@ -39,6 +39,7 @@ class ClimateModel:
     hr_ref: Optional[ClimateVariable] = None
     engine: Optional[str] = None  # Optional engine override for this model
     emulation_data: Optional[bool] = False  # Optional bool to handle metadata ingestion
+    loader: Optional[str] = "default" # Optional flag for UBC WRF specific io 'ubc_wrf'
     alignment_pipeline: List[str] = field(default_factory=lambda: [
         "temporal_crop", "regrid", "spatial_crop", "coarsen", "user_defined_transforms", "split_data"
     ])

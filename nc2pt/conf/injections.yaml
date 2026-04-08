@@ -12,6 +12,7 @@ defaults:
   - climate_models/hr/vas@internal._hr_vas
   - climate_models/hr/tas@internal._hr_tas
   - climate_models/hr/pr@internal._hr_pr
+  - climate_models/hr/ps@internal._hr_ps
 
   # LR Model
   - climate_models/lr@internal._lr_model
@@ -19,6 +20,7 @@ defaults:
   - climate_models/lr/vas@internal._lr_vas
   - climate_models/lr/tas@internal._lr_tas
   - climate_models/lr/pr@internal._lr_pr
+  - climate_models/lr/ps@internal._lr_ps
 
   # LR Invariant Model
   - climate_models/lr_invariant@internal._lr_invariant_model
@@ -26,6 +28,9 @@ defaults:
   # HR Invariant Model
   - climate_models/hr_invariant@internal._hr_invariant_model
   - climate_models/hr_invariant/topo@internal._hr_invariant_topo
+  - climate_models/hr_invariant/land_mask@internal._hr_invariant_land_mask
+  - climate_models/hr_invariant/land_use@internal._hr_invariant_land_use
+  - climate_models/hr_invariant/surface_roughness@internal._hr_invariant_surface_roughness
 
   # LR_emulation Model
   - climate_models/lr_emulation@internal._lr_emulation_model
@@ -33,6 +38,7 @@ defaults:
   - climate_models/lr_emulation/vas@internal._lr_emulation_vas
   - climate_models/lr_emulation/tas@internal._lr_emulation_tas
   - climate_models/lr_emulation/pr@internal._lr_emulation_pr
+  - climate_models/lr_emulation/ps@internal._lr_emulation_ps
 
   # My Model Template
   - climate_models/my_model@internal._my_model
@@ -49,6 +55,7 @@ internal:
   hr_vas: ${internal._hr_vas}
   hr_tas: ${internal._hr_tas}
   hr_pr: ${internal._hr_pr}
+  hr_ps: ${internal._hr_ps}
 
   # LR aliases
   lr: ${internal._lr_model}
@@ -56,6 +63,7 @@ internal:
   lr_vas: ${internal._lr_vas}
   lr_tas: ${internal._lr_tas}
   lr_pr: ${internal._lr_pr}
+  lr_ps: ${internal._lr_ps}
 
   # LR Invariant aliases
   lr_invariant: ${internal._lr_invariant_model}
@@ -63,12 +71,16 @@ internal:
   # HR Invariant aliases
   hr_invariant: ${internal._hr_invariant_model}
   hr_invariant_topo: ${internal._hr_invariant_topo}
+  hr_invariant_land_mask: ${internal._hr_invariant_land_mask}
+  hr_invariant_land_use: ${internal._hr_invariant_land_use}
+  hr_invariant_surface_roughness: ${internal._hr_invariant_surface_roughness}
 
   # LR Emulation aliases
   lr_emulation: ${internal._lr_emulation_model}
   lr_emulation_uas: ${internal._lr_emulation_uas}
   lr_emulation_vas: ${internal._lr_emulation_vas}
   lr_emulation_tas: ${internal._lr_emulation_tas}
+  lr_emulation_ps: ${internal._lr_emulation_ps}
   lr_emulation_pr: ${internal._lr_emulation_pr}
 
   # My Model Template

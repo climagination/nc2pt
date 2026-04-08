@@ -7,16 +7,17 @@ paths:
   # ────────────────────────────────────────
   # User-dependent path for HR reference grid
   # ────────────────────────────────────────
-  hr_ref: /home/sbeairsto/projects/nc2pt/nc2pt/data/hr_ref.nc
+  hr_ref: /net/venus/kenes/data/sbeairsto/UBC_WRF/ubc_wrf_staticfields_d03.nc # UBC_WRF reference grid (should be accessible to everyone)
 
   # ────────────────────────────────────────
   # Shared data paths – High-Resolution WRF (HR)
   # ────────────────────────────────────────
   hr:
-    uas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/U10/*.nc
-    vas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/V10/*.nc
-    pr:  /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/PREC/*.nc
-    tas: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/ctl-wrf-wca/T2/*.nc
+    uas: /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
+    vas: /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
+    pr:  /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_RAIN_d03_metgrid_*.nc  
+    tas: /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
+    ps:  /net/venus/blue/data/WRF/kikridaust/Share_Data/SUBSETTED/*/metgrid_*/COMPRESSED_SUBSETTED_d03_metgrid_*.nc
 
   # ────────────────────────────────────────
   # Shared data paths – Low-Resolution ERA5 (LR)
@@ -26,20 +27,22 @@ paths:
     vas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/vas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
     pr:  /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/pr_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc
     tas: /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/tas_1hr_ERA5_an_RDA-025_1979010100-2018123123.nc
+    ps:  /net/venus/kenes/downloaded-data/acannon/ERA5_NCAR-RDA_North_America/1hr/ps_1hr_ERA5_fc_RDA-025_1979010106-2019010106.nc
 
   # ────────────────────────────────────────
   # Shared invariant fields (e.g., orography, landmask)
   # ────────────────────────────────────────
-  hr_invariant: /net/venus/kenes/downloaded-data/acannon/USask-WRF-WCA/CA4km_const.nc
+  hr_invariant: /net/venus/kenes/data/sbeairsto/UBC_WRF/ubc_wrf_staticfields_d03.nc # UBC_WRF static fields (should be accessible to everyone)
 
   # ────────────────────────────────────────
   # User-dependent path for – Low-Resolution ERA5 Emulation Metadata (LR Emulation) 
   # ────────────────────────────────────────
   lr_emulation:
-    uas_metadata: /home/username/data/path/lr_uas_feature_scaling_metadata.json
-    vas_metadata: /home/username/data/path/lr_vas_feature_scaling_metadata.json
-    pr_metadata:  /home/username/data/path/lr_pr_feature_scaling_metadata.json
-    tas_metadata: /home/username/data/path/lr_tas_feature_scaling_metadata.json
+      uas_metadata: /home/username/data/path/lr_uas_feature_scaling_metadata.json
+      vas_metadata: /home/username/data/path/lr_vas_feature_scaling_metadata.json
+      pr_metadata:  /home/username/data/path/lr_pr_feature_scaling_metadata.json
+      tas_metadata: /home/username/data/path/lr_tas_feature_scaling_metadata.json
+      ps_metadata:  /home/username/data/path/lr_ps_feature_scaling_metadata.json
 
   # ────────────────────────────────────────
   # User-dependent path for My Model Template

@@ -17,12 +17,12 @@ defaults:
   - loader               # Loader config (batch size, shuffling, etc.)
 
 _target_: nc2pt.climatedata.ClimateData
-output_path: /home/sbeairsto/data-sbeairsto/van_isle_128_testing
+output_path: /home/username/output/path
 
 # Define the list of climate models to include (injected in `injections.yaml`)
 climate_models:
-  #- ${internal.hr}
-  #- ${internal.lr}
+  - ${internal.hr}
+  - ${internal.lr}
   #- ${internal.lr_invariant}
   - ${internal.hr_invariant}
   #- ${internal.lr_emulation}
