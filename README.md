@@ -10,79 +10,87 @@
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)
 
+# Overview
+
 ## The Problem
 NetCDF4 files, commonly used for storing climate and earth systems data, are not optimized for use with most machine learning applications with heavy io requirements or datasets that are simply too large to hold in GPU/CPU memory. 
 
 ## How does nc2pt help?
 It performs a preprocessing flow on climate fields and converts them from NetCDF4 (`.nc`) to an intermediate file format Zarr (`.zarr`) which allows for the parallel loading and writing to individual PyTorch Lightning files (`.pt`) that can be loaded directly onto GPUs.
 
-## What intended use cases of nc2pt?
-* standardizing and making metadata uniform between datasets
+## What are the intended use cases of nc2pt?
+  **`nc2pt` prepares climate datasets for machine learning workflows.** It comes pre-configured for downscaling but supports any scenario requiring aligned, ML-ready NetCDF datasets.
+  
+  ### Primary Use Cases
 
-* aligns different grids perfectly by re-projecting them onto one another -- nc2pt projects the low-resolution (lr) regular grids onto high-resolution curvilinear grids (hr). This step can be configured to suit specific datasets.
+| Use Case | Description | 
+|----------|-------------| 
+ **Downscaling Model Training** | Prepare paired low-resolution input and high-resolution target data for training super-resolution models (GANs, CNNs, diffusion models). Includes feature scaling (normalization/standardization) and train/val/test splitting. |
+ | **Evaluation Dataset Preparation** | Map multiple high-resolution datasets (model predictions, reference data, ensemble members) onto a common grid with consistent spatial extent, resolution, and temporal coverage for fair comparison. | 
+| **Custom ML Preprocessing** | Build bespoke preprocessing pipelines with configurable alignment steps, transformations, and normalization schemes for research-specific ML applications. | 
 
-* selects individual years as test years or training years
+### What nc2pt Provides
 
-* organizes code into input (lr) or output (hr) fields
+**Core Preprocessing:** Spatial alignment, temporal synchronization, feature scaling, metadata standardization, train/val/test splitting
 
-* Designed for O(terabyte) datasets
+**Format & Performance:** NetCDF → Zarr → PyTorch conversion, parallelized I/O for O(terabyte) datasets, optional batching for reduced I/O overhead
+
+**Customization:** Configurable processing pipelines, custom transformations (unit conversion, log transforms, user functions)
+
+
+## Understanding `ClimateModel` Objects
+
+**`nc2pt` organizes datasets using `ClimateModel` configurations.** Each `ClimateModel` defines a preprocessing workflow for a category of data (e.g., low-resolution inputs, high-resolution targets, model predictions).
+
+**Why separate `ClimateModels`?** Different data sources need different preprocessing. Low-resolution data needs regridding and coarsening to match high-resolution targets. Static fields need no temporal processing. Model outputs may need different normalization schemes.
+
+**Default setup**: `nc2pt` comes with pre-configured `lr` (low-resolution input), `hr` (high-resolution target), `hr_invariant`(invariant high-resolution input), and `lr_emulation` (low-resolution input for inference) `ClimateModels` for downscaling workflows.
 
 ## What preprocessing steps does nc2pt do? 🤔
 
-High-level workflow
-![image](https://private-user-images.githubusercontent.com/10455520/313314202-e13396ce-2224-4298-8fa2-472631efe4df.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTQ2Nzc3NDksIm5iZiI6MTcxNDY3NzQ0OSwicGF0aCI6Ii8xMDQ1NTUyMC8zMTMzMTQyMDItZTEzMzk2Y2UtMjIyNC00Mjk4LThmYTItNDcyNjMxZWZlNGRmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA1MDIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNTAyVDE5MTcyOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTA0MzAxN2JiZGMyZjYwNzcyYTEwNjgxYjRhNmNiYTEyNDMzMTlmZDRiZWVkYTAzZjcyNWU0YTFhNDI2NGUzNzAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.xcTKPMiumJhWMo9TzvBG499QOPQPvaI7XekUifjwXLs)
+**Example: The `lr` (low-resolution) `ClimateModel` workflow**
 
-1. configures metadata between the datasets as defined in the config
-2. slices data to a pre-determined range of dates
-3. aligns the grids via interpolation, crops them to be the same size, and coarsens the low-resolution fields by the configured scale factor
-4. applies user defined transforms like unit conversions or log transformations
-5. optionally splits into train/test/validation based on years defined in the config
-6. standardizes/normalizes the datasets based on statistics computed from the training data (or full data, if no split). These statistics are stored in the metadata.
-7. writes to `.zarr`
-8. `nc2pt/tools/zarr_to_torch.py` - writes to PyTorch files
-9. `nc2pt/tools/single_file_to_batches.py` - batches the single PyTorch files
+1. **Configure metadata** - Standardize variable names and attributes across datasets
+2. **Temporal crop** - Slice data to specified date range
+3. **Regrid** - Interpolate onto target grid coordinates
+4. **Spatial crop** - Crop to specified spatial extent
+5. **Coarsen** - Reduce resolution by scale factor to return to desired (often native) coarseness
+6. **User-defined transforms** - Apply unit conversions or custom functions
+7. **Data split** - Partition into train/test/validation by year
+8. **Feature scaling** - Normalize/standardize using training statistics (statistics saved to metadata file for post-processing)
+9. **Write to Zarr** - Save intermediate format with preserved metadata
+10. **Serialize to PyTorch** - Convert to `.pt` files via `nc2pt/tools/zarr_to_torch.py`
+11. **Optional batching** - Combine files via `nc2pt/tools/single_file_to_batches.py`
 
-## Special Scaling for Precipitation
-
-When preprocessing with nc2pt, precipitation (pr) is handled differently:
-* A log-transform is automatically applied to precipitation values, with a small constant ϵ = 10 **-3:
-		scaled = log(P+ϵ) - log(ϵ)/ log(max(P)+ϵ) - log(ϵ)
-
-* This normalization is applied to the pr variable alone, other variables use standard normalization.
-
-* Specifying a log-transform for pr is not required as it will cause the log-transformed twice.
-
-* A log message will inform you each time this special scaling is performed.
+**The `hr` (high-resolution) `ClimateModel` differs:** Skips steps 3, 5 (regrid/coarsen) since it defines the target grid that `lr` aligns to.
 
 ## Customizable Pipelines 🚦
 
-Each model can define its own custom preprocessing steps by listing them in order via the `alignment_pipeline` field of the model YAML. Steps include:
+Each `ClimateModel`'s preprocessing steps are configurable via `alignment_pipeline`:
 
--   `temporal_crop`
-    
--   `regrid`
-    
--   `spatial_crop`
-    
--   `coarsen`
-
--   `user_defined_transforms`
-    
--   `data_split`
-    
-
-By default, all 6 are applied. You can exclude or reorder them by editing the YAML, e.g.:
-
-```
+```yaml
+# conf/climate_models/lr.yaml
 alignment_pipeline:
   - temporal_crop
   - regrid
   - spatial_crop
+  - coarsen
+  - user_defined_transforms
+  - data_split
 ```
 
-## What are the downsides of using PyTorch files for climate data?
-The most obvious downside is that you lose the metadata associated with a netCDF dataset. The intermediate Zarr format produced by nc2pt allows for parallelized io and perserves the metadata. This is useful for inference. 
+**Customize by removing or reordering steps** to match your workflow:
 
+```yaml
+#Example: Skip coarsening and data split for model output already at target resolution
+alignment_pipeline:
+  - temporal_crop
+  - regrid
+  - spatial_crop
+ ```
+
+
+# Using nc2pt
 
 ## Requirements
 
@@ -140,7 +148,7 @@ Each model and variable is defined in separate YAML files under `conf/climate_mo
 To add a new model:
 
 1.  **Create a model file**  
-    Place it at `conf/climate_models/<name>/model.yaml`. Example:
+    Place it at `conf/climate_models/<model_name>.yaml`. Example:
     
     ```yaml
     _target_:  nc2pt.climatedata.ClimateModel
