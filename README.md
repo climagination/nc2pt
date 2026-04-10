@@ -384,7 +384,7 @@ The preprocessing pipeline consists of configurable steps that transform your da
 | `write_to_zarr` | Save intermediate format | Always (automatic)|
 
 ## Configuration Guide
-`nc2pt` uses [Hydra](https://hydra.cc/) for flexible hyerarchical configuration. The configuration files are in `conf/`.
+`nc2pt` uses [Hydra](https://hydra.cc/) for flexible hierarchical configuration. The configuration files are in `conf/`.
 
 ### Essential Configuration Files
 These are the files you'll edit most often:
