@@ -133,6 +133,7 @@ That’s it!
 `nc2pt` uses [Hydra](https://hydra.cc/) for flexible, hierarchical configuration. All settings are defined in YAML files under the `conf/` directory.
  
  ### Configuration File Structure
+
  conf/ 
  ├── config.yaml # Main config: models, output, global settings 
  ├── paths.yaml # All file paths for datasets and variables
@@ -214,6 +215,68 @@ apply_normalize: false
 invariant: false
 coarsening_method: "mean"
 transform: []  # No unit conversion needed
+```
+
+### Quick Start: Using the Default Configuration
+
+**For typical downscaling workflows**, you can use the pre-configured `lr` and `hr` `ClimateModels`:
+
+1.  **Update file paths** in `conf/paths.yaml`:
+    
+   ``` yaml
+    paths:
+      hr_ref: /path/to/your/hr_reference_grid.nc
+      
+      hr:
+        uas: /path/to/your/hr_wind_u_*.nc
+        tas: /path/to/your/hr_temperature_*.nc
+        pr:  /path/to/your/hr_precipitation_*.nc
+      
+      lr:
+        uas: /path/to/your/lr_wind_u_*.nc
+        tas: /path/to/your/lr_temperature_*.nc
+        pr:  /path/to/your/lr_precipitation_*.nc
+```
+    
+    > **Tip:** Paths support wildcards (`*`) for matching multiple files.
+    
+2.  **Select variables** in `conf/climate_models/hr.yaml` and `conf/climate_models/lr.yaml`:
+    
+  ``` yaml
+    climate_variables:
+      - ${internal.hr_uas}
+      - ${internal.hr_tas}
+      # - ${internal.hr_pr}  # Comment out to exclude
+```
+    
+3.  **Adjust domain and dates** in `conf/select.yaml`:
+    
+  ```yaml   
+    select:
+      time:
+        range:
+          start: "20140101T00:00:00"
+          end: "20170101T00:00:00"
+        test_years: [2016]
+        validation_years: [2015]
+      
+      spatial:
+        scale_factor: 8  # LR will be 8x coarser than HR
+        x:
+          first_index: 100
+          last_index: 228
+        y:
+          first_index: 100
+          last_index: 228
+```
+    
+4.  **Set output path** in `conf/config.yaml`:
+    
+```yaml
+    output_path: /path/to/output/directory
+```
+
+5.  **Run preprocessing** (see [Running](https://))
 
 ----------
 
