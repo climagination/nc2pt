@@ -130,16 +130,90 @@ That’s it!
 
 ### 📋 Configuration
 
-`nc2pt` uses [Hydra](https://hydra.cc/) for flexible configuration. The main configuration file is `conf/config.yaml`, which defines:
+`nc2pt` uses [Hydra](https://hydra.cc/) for flexible, hierarchical configuration. All settings are defined in YAML files under the `conf/` directory.
+ 
+ ### Configuration File Structure
+ conf/ 
+ ├── config.yaml # Main config: models, output, global settings 
+ ├── paths.yaml # All file paths for datasets and variables
+ ├── injections.yaml # Hydra dependency injection (links everything together)
+ ├── dims.yaml # Dimension definitions (time, rlat, rlon, etc.)
+ ├── coords.yaml # Coordinate variables (lat, lon)
+ ├── select.yaml # Spatial/temporal subsetting and train/val/test split
+ ├── compute.yaml # Dask settings, chunking, parallelization
+ ├── loader.yaml # Batch loader settings for training
+ │
+ └── climate_models/ # ClimateModel and ClimateVariable configs
+ ├── hr.yaml # High-resolution model definition
+ ├── lr.yaml # Low-resolution model definition
+ ├── hr_invariant.yaml # Static high-res fields
+ ├── lr_emulation.yaml # Inference-time LR data
+ ├── my_model.yaml # Template for custom models
+ │
+ ├── hr/ # HR variable configurations
+ │ ├── tas.yaml # Temperature
+ │ ├── pr.yaml # Precipitation
+ │ └── ... #  Other variables
+ │ 
+ ├── lr/ # LR variable configurations
+ │ ├── tas.yaml
+ │ ├── pr.yaml
+ │ └── ...
+ │
+ └── my_model/ # Your custom model variables 
+ └── uas.yaml # Template variable
 
--   The list of climate models to include (`climate_models`)
-    
--   Global dimensions, coordinates, subsetting, and chunking
-    
--   Output path and compute options
-    
 
-Each model and variable is defined in separate YAML files under `conf/climate_models/`, making the pipeline modular and easily extensible.
+ ### Key Configuration Files
+
+| File | Purpose | When to Edit |
+|------|---------|--------------|
+| **config.yaml** | Select which `ClimateModels` to process, set output path | Always (enable/disable models) |
+| **paths.yaml** | Define file paths for all datasets | Always (point to your data) |
+| **select.yaml** | Define domain extent, time range, train/val/test split | Often (customize domain) |
+| **compute.yaml** | Dask workers, chunking strategy | If memory issues arise |
+| **climate_models/<model>.yaml** | Define preprocessing pipeline, select variables | When customizing workflows |
+| **climate_models/<model>/<var>.yaml** | Variable-specific settings (units, transforms) | When adding variables |
+| **dims.yaml** | Dimension name mappings | Rarely (if using non-standard dims) |
+| **coords.yaml** | Coordinate name mappings | Rarely |
+| **injections.yaml** | Hydra wiring (advanced) | Only when adding new models/vars |
+| **loader.yaml** | Training batch settings | For ML training setup |
+
+---
+
+### Understanding `ClimateVariable` Objects
+
+Each physical variable (temperature, precipitation, wind, etc.) is configured as a **`ClimateVariable`** with metadata controlling how it's processed.
+
+**Key `ClimateVariable` attributes:**
+
+| Attribute | Purpose | Example |
+|-----------|---------|---------|
+| **name** | Standard variable name | `"tas"` (near-surface air temperature) |
+| **alternative_names** | Names this variable might have in source files | `["T2", "t2m", "air_temperature"]` |
+| **path** | File path (from `paths.yaml`) | `${internal.paths.hr.tas}` |
+| **is_west_negative** | Whether longitude uses negative values for western hemisphere | `true` for -180 to 180, `false` for 0 to 360 |
+| **invariant** | Is this a time-invariant field? | `true` for topography, `false` for temperature |
+| **apply_standardize** | Apply standardization (zero mean, unit variance) | `true` |
+| **apply_normalize** | Apply min-max normalization to [0, 1] | `false` |
+| **transform** | Custom transformations (applied before scaling) | `["x * 3600"]` to convert kg/m²/s to mm/hr |
+| **coarsening_method** | How to aggregate when coarsening | `"mean"` or `"sum"` |
+| **metadata_path** | Path to pre-computed scaling statistics (for inference) | `/path/to/tas_metadata.json` |
+
+**Example variable configuration:**
+
+```yaml
+# conf/climate_models/hr/tas.yaml
+_target_: nc2pt.climatedata.ClimateVariable
+name: "tas"
+alternative_names: ["T2", "t2m", "air_temperature"]
+path: ${internal.paths.hr.tas}
+is_west_negative: false
+apply_standardize: true
+apply_normalize: false
+invariant: false
+coarsening_method: "mean"
+transform: []  # No unit conversion needed
 
 ----------
 
