@@ -10,6 +10,120 @@
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)
 
+## ⚡ Quick Start
+
+Get your first NetCDF → PyTorch conversion running in 5 minutes:
+
+### 1. Install
+```bash
+git clone https://github.com/climagination/nc2pt.git
+cd nc2pt
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+pip install -e .
+```
+
+### 2. Point to Your Data
+Edit `conf/paths.yaml` with paths to your NetCDF files:
+
+```yaml
+paths:
+  hr_ref: /path/to/high_res_reference.nc  # Single-timestep HR grid
+  
+  hr:
+    tas: /path/to/high_res_temperature*.nc
+  
+  lr:
+    tas: /path/to/low_res_temperature*.nc
+```
+
+### 3. Configure Your Domain
+
+Edit `conf/select.yaml` to set your spatial/temporal extent and test/train/validation split:
+
+```yaml
+select:
+  time:
+    range:
+      start: "2015-01-01"
+      end: "2016-01-01"
+
+	#Select years to reserve for testing and validation
+	#Remaining years are used for training
+	test_years: [2014]
+	validation_years: [2015]
+
+  spatial:
+    scale_factor: 8  # LR will be 8x coarser than HR
+    x:
+      first_index: 0
+      last_index: 128
+    y:
+      first_index: 0
+      last_index: 128
+  ```
+
+### 4. Run Preprocessing
+
+``` bash
+python nc2pt/preprocess.py 
+```
+
+This creates `.zarr` files in your output directory (default: `output/`).
+
+### 5. Convert to PyTorch
+```bash
+python nc2pt/tools/zarr_to_torch.py
+```
+
+**Done!** You now have individual `.pt` files for each timestep.
+
+### 📦 What You Just Created
+
+```bash
+output/
+├── hr/
+│   └── tas/
+│       ├── train/
+│       │   ├── 20150101_00.pt
+│       │   ├── 20150101_01.pt
+│       │   └── ...
+│       └── test/
+│           └── ...
+└── lr/
+    └── tas/
+        └── ...` 
+```
+Each `.pt` file contains a single timestep ready to load directly onto your GPU:
+
+``` python
+import torch
+data = torch.load('output/hr/tas/train/20150101_00.pt')
+print(data.shape)  # (1, height, width)
+```
+
+### 🚨 Troubleshooting
+
+**"FileNotFoundError: No such file"**
+
+-   Check your paths in  `conf/paths.yaml`  are correct
+-   Verify wildcards (`*.nc`) match your filenames
+
+**"Memory Error" or "Worker crashed"**
+
+-   Reduce  `n_workers`  in  `conf/compute.yaml`  (try  `n_workers: 2`)
+-   See  [Troubleshooting](https://radia.vrd-drv.crc.ca/c/756366a7-c792-431f-8a12-b3b13e5e5bca#troubleshooting)  for chunking guidance
+
+**"Variable 'tas' not found"**
+-   Check your NetCDF variable names with  `ncdump -h yourfile.nc`
+-   Add them to  `alternative_names`  in  `conf/climate_models/hr/tas.yaml`
+
+### 🎯 Next Steps
+-   **Add more variables**: See  [Adding Climate Variables](https://radia.vrd-drv.crc.ca/c/756366a7-c792-431f-8a12-b3b13e5e5bca#adding-a-new-climate-variable)
+-   **Customize preprocessing**: Learn about  [ClimateModel pipelines](https://radia.vrd-drv.crc.ca/c/756366a7-c792-431f-8a12-b3b13e5e5bca#customizable-pipelines)
+-   **Train a model**: Check out our  [GAN for downscaling](https://github.com/climagination/ClimatExML)
+
 # Overview
 
 ## The Problem
