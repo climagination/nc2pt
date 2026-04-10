@@ -134,6 +134,7 @@ That’s it!
  
  ### Configuration File Structure
 
+``` markdown
  conf/ 
  ├── config.yaml # Main config: models, output, global settings 
  ├── paths.yaml # All file paths for datasets and variables
@@ -163,7 +164,7 @@ That’s it!
  │
  └── my_model/ # Your custom model variables 
  └── uas.yaml # Template variable
-
+```
 
  ### Key Configuration Files
 
@@ -383,7 +384,7 @@ That’s it — your new model or variable will now be included in the pipeline 
 Testing is done with pytest. The easiest way to perform tests is to install pytest and use the command: `pytest --cov-report term-missing --cov=nc2pt .`
 It will generate a coverage report and automatically use files prepended with `test_*.py` in `nc2pt/tests`
 
-**Note: Hehe, need to update the tests. Currently not working.
+**Note:**  Hehe, need to update the tests. Currently not working.
 
 
 ### 📝 Notes
