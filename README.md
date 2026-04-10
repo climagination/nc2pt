@@ -66,6 +66,8 @@ Edit `conf/paths.yaml` with paths to your NetCDF files:
 ```yaml
 paths:
   hr_ref: /path/to/high_res_reference.nc  # Single-timestep HR grid
+  # ⚠️ This defines the target grid coordinates
+  # Must be same resolution as hr.tas but can be any single timestep
   
   hr:
     tas: /path/to/high_res_temperature*.nc
@@ -103,7 +105,8 @@ select:
 ### 4. Run Preprocessing
 
 ``` bash
-python nc2pt/preprocess.py 
+python nc2pt/preprocess.py
+# ⏱️ Typical runtime: 5-30 minutes for 3 years of hourly data (depends on domain size)
 ```
 
 This creates `.zarr` files in your output directory (default: `output/`).
@@ -119,23 +122,24 @@ python nc2pt/tools/zarr_to_torch.py
 
 ```bash
 output/
-├── hr/
+├── test/
 │   └── tas/
-│       ├── train/
+│       ├── hr/
 │       │   ├── 20150101_00.pt
 │       │   ├── 20150101_01.pt
 │       │   └── ...
-│       └── test/
+│       └── lr/
 │           └── ...
-└── lr/
-    └── tas/
-        └── ...` 
+├──  train/
+│    └── tas/
+│        └── ...
+└── ...
 ```
 Each `.pt` file contains a single timestep ready to load directly onto your GPU:
 
 ``` python
 import torch
-data = torch.load('output/hr/tas/train/20150101_00.pt')
+data = torch.load('output/test/tas/hr/20150101_00.pt')
 print(data.shape)  # (1, height, width)
 ```
 
@@ -347,7 +351,9 @@ A **ClimateVariable** represents a single physical field (temperature, precipita
 ```yaml
 _target_: nc2pt.climatedata.ClimateVariable
 name: "tas"                              # Standard variable name
-alternative_names: ["T2", "t2m", "temp"] # Names it might have in your files
+alternative_names: ["T2", "t2m", "temp"] # Names it might have in your file
+# nc2pt will search for ANY of these names in your NetCDF files
+# Useful when working with multiple data sources with inconsistent naming
 path: ${internal.paths.hr.tas}           # File path
 is_west_negative: false                  # Longitude convention
 invariant: false                         # Time-varying or static?
