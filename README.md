@@ -10,86 +10,193 @@
 
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)
 
+# nc2pt: NetCDF to PyTorch for Climate Data
+
+**Convert NetCDF climate data to PyTorch-ready formats for machine learning**
+
+---
+
+## Table of Contents
+- [Quick Start](#quick-start)
+- [What is nc2pt?](#what-is-nc2pt)
+- [Installation](#installation)
+- [Basic Usage](#basic-usage)
+  - [Your First Preprocessing Run](#your-first-preprocessing-run)
+  - [Verifying Output](#verifying-output)
+- [Core Concepts](#core-concepts)
+  - [ClimateModel Objects](#climatemodel-objects)
+  - [ClimateVariable Objects](#climatevariable-objects)
+  - [Processing Pipeline](#processing-pipeline)
+- [Configuration Guide](#configuration-guide)
+  - [Essential Configuration Files](#essential-configuration-files)
+  - [Understanding the Config Structure](#understanding-the-config-structure)
+- [Common Workflows](#common-workflows)
+  - [Downscaling (Default)](#downscaling-default)
+  - [Model Evaluation](#model-evaluation)
+  - [Custom ML Preprocessing](#custom-ml-preprocessing)
+- [Customization](#customization)
+  - [Adding Models](#adding-a-new-climatemodel)
+  - [Adding Variables](#adding-a-new-climatevariable)
+  - [Customizing Processing Pipelines](#customizable-pipelines)
+- [Advanced Topics](#advanced-topics)
+  - [Memory and Chunking](#memory-and-chunking)
+  - [Scaling Statistics and Inference](#scaling-statistics-and-inference)
+- [Technical Notes](#technical-notes)
+
+
+---
+
+## Quick Start
+
+Get your first NetCDF → PyTorch conversion running in 5 minutes:
+
+### 1. Install
+```bash
+git clone https://github.com/climagination/nc2pt.git
+cd nc2pt
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+pip install -e .
+```
+
+### 2. Point to Your Data
+Edit `conf/paths.yaml` with paths to your NetCDF files:
+
+```yaml
+paths:
+  hr_ref: /path/to/high_res_reference.nc  # Single-timestep HR grid
+  # ⚠️ This defines the target grid coordinates
+  # Must be same resolution as hr.tas but can be any single timestep
+  
+  hr:
+    tas: /path/to/high_res_temperature*.nc
+  
+  lr:
+    tas: /path/to/low_res_temperature*.nc
+```
+
+### 3. Configure Your Domain
+
+Edit `conf/select.yaml` to set your spatial/temporal extent and test/train/validation split:
+
+```yaml
+select:
+  time:
+    range:
+      start: "2015-01-01"
+      end: "2016-01-01"
+
+	#Select years to reserve for testing and validation
+	#Remaining years are used for training
+	test_years: [2014]
+	validation_years: [2015]
+
+  spatial:
+    scale_factor: 8  # LR will be 8x coarser than HR
+    x:
+      first_index: 0
+      last_index: 128
+    y:
+      first_index: 0
+      last_index: 128
+  ```
+
+### 4. Run Preprocessing
+
+``` bash
+python nc2pt/preprocess.py
+# ⏱️ Typical runtime: 5-30 minutes for 3 years of hourly data (depends on domain size)
+```
+
+This creates `.zarr` files in your output directory (default: `output/`).
+
+### 5. Convert to PyTorch
+```bash
+python nc2pt/tools/zarr_to_torch.py
+```
+
+**Done!** You now have individual `.pt` files for each timestep.
+
+### 📦 What You Just Created
+
+```bash
+output/
+├── test/
+│   └── tas/
+│       ├── hr/
+│       │   ├── 20150101_00.pt
+│       │   ├── 20150101_01.pt
+│       │   └── ...
+│       └── lr/
+│           └── ...
+├──  train/
+│    └── tas/
+│        └── ...
+└── ...
+```
+Each `.pt` file contains a single timestep ready to load directly onto your GPU:
+
+``` python
+import torch
+data = torch.load('output/test/tas/hr/20150101_00.pt')
+print(data.shape)  # (1, height, width)
+```
+
+### 🚨 Troubleshooting
+
+**"FileNotFoundError: No such file"**
+
+-   Check your paths in  `conf/paths.yaml`  are correct
+-   Verify wildcards (`*.nc`) match your filenames
+
+**"Memory Error" or "Worker crashed"**
+
+-   Reduce  `n_workers`  in  `conf/compute.yaml`  (try  `n_workers: 2`)
+-   See  [Memory and Chunking](#memory-and-chunking)  for chunking guidance
+
+**"Variable 'tas' not found"**
+-   Check your NetCDF variable names with  `ncdump -h yourfile.nc`
+-   Add them to  `alternative_names`  in  `conf/climate_models/hr/tas.yaml`
+
+### 🎯 Next Steps
+-   **Add more variables**: See  [Adding Climate Variables](#adding-a-new-climatevariable)
+-   **Customize preprocessing**: Learn about  [ClimateModel pipelines](#customizable-pipelines)
+-   **Train a model**: Check out our  [GAN for downscaling](https://github.com/climagination/ClimatExML)
+
+## What is nc2pt?
+nc2pt is a preprocessing tool that converts NetCDF climate datasets into PyTorch-ready formats optimized for machine learning workflows.
+
 ## The Problem
-NetCDF4 files, commonly used for storing climate and earth systems data, are not optimized for use with most machine learning applications with heavy io requirements or datasets that are simply too large to hold in GPU/CPU memory. 
+NetCDF4 files, commonly used for climate and earth systems data, are not optimized for:
+- **ML training loops** with heavy I/O requirements
+- **Datasets that exceed GPU/CPU memory** (terabyte-scale)
+- **Fast random access** during batched training 
 
-## How does nc2pt help?
-It performs a preprocessing flow on climate fields and converts them from NetCDF4 (`.nc`) to an intermediate file format Zarr (`.zarr`) which allows for the parallel loading and writing to individual PyTorch Lightning files (`.pt`) that can be loaded directly onto GPUs.
+## The Solution
+nc2pt provides:
 
-## What intended use cases of nc2pt?
-* standardizing and making metadata uniform between datasets
-
-* aligns different grids perfectly by re-projecting them onto one another -- nc2pt projects the low-resolution (lr) regular grids onto high-resolution curvilinear grids (hr). This step can be configured to suit specific datasets.
-
-* selects individual years as test years or training years
-
-* organizes code into input (lr) or output (hr) fields
-
-* Designed for O(terabyte) datasets
-
-## What preprocessing steps does nc2pt do? 🤔
-
-High-level workflow
-![image](https://private-user-images.githubusercontent.com/10455520/313314202-e13396ce-2224-4298-8fa2-472631efe4df.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTQ2Nzc3NDksIm5iZiI6MTcxNDY3NzQ0OSwicGF0aCI6Ii8xMDQ1NTUyMC8zMTMzMTQyMDItZTEzMzk2Y2UtMjIyNC00Mjk4LThmYTItNDcyNjMxZWZlNGRmLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA1MDIlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNTAyVDE5MTcyOVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTA0MzAxN2JiZGMyZjYwNzcyYTEwNjgxYjRhNmNiYTEyNDMzMTlmZDRiZWVkYTAzZjcyNWU0YTFhNDI2NGUzNzAmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.xcTKPMiumJhWMo9TzvBG499QOPQPvaI7XekUifjwXLs)
-
-1. configures metadata between the datasets as defined in the config
-2. slices data to a pre-determined range of dates
-3. aligns the grids via interpolation, crops them to be the same size, and coarsens the low-resolution fields by the configured scale factor
-4. applies user defined transforms like unit conversions or log transformations
-5. optionally splits into train/test/validation based on years defined in the config
-6. standardizes/normalizes the datasets based on statistics computed from the training data (or full data, if no split). These statistics are stored in the metadata.
-7. writes to `.zarr`
-8. `nc2pt/tools/zarr_to_torch.py` - writes to PyTorch files
-9. `nc2pt/tools/single_file_to_batches.py` - batches the single PyTorch files
-
-## Special Scaling for Precipitation
-
-When preprocessing with nc2pt, precipitation (pr) is handled differently:
-* A log-transform is automatically applied to precipitation values, with a small constant ϵ = 10 **-3:
-		scaled = log(P+ϵ) - log(ϵ)/ log(max(P)+ϵ) - log(ϵ)
-
-* This normalization is applied to the pr variable alone, other variables use standard normalization.
-
-* Specifying a log-transform for pr is not required as it will cause the log-transformed twice.
-
-* A log message will inform you each time this special scaling is performed.
-
-## Customizable Pipelines 🚦
-
-Each model can define its own custom preprocessing steps by listing them in order via the `alignment_pipeline` field of the model YAML. Steps include:
-
--   `temporal_crop`
-    
--   `regrid`
-    
--   `spatial_crop`
-    
--   `coarsen`
-
--   `user_defined_transforms`
-    
--   `data_split`
-    
-
-By default, all 6 are applied. You can exclude or reorder them by editing the YAML, e.g.:
-
-```
-alignment_pipeline:
-  - temporal_crop
-  - regrid
-  - spatial_crop
-```
-
-## What are the downsides of using PyTorch files for climate data?
-The most obvious downside is that you lose the metadata associated with a netCDF dataset. The intermediate Zarr format produced by nc2pt allows for parallelized io and perserves the metadata. This is useful for inference. 
+| Feature | Benefit |
+|---------|---------|
+| **Format Conversion** | NetCDF → Zarr → PyTorch for GPU-ready data |
+| **Spatial Alignment** | Automatic regridding and domain matching |
+| **Feature Scaling** | Built-in normalization/standardization |
+| **Data Splitting** | Train/validation/test splits by year |
+| **Parallel I/O** | Process terabyte-scale datasets efficiently |
 
 
-## Requirements
+### When to Use nc2pt
+✅ **Use nc2pt when:**
+- Training downscaling models (GANs, CNNs, diffusion models)
+- Preparing evaluation datasets with consistent grids
+- Building custom ML pipelines with climate data
+- Working with datasets too large for memory
 
+## Installation
+
+### Requirements
 - Python >= 3.8
 - Recommended: virtual environment (e.g. `venv` or `virtualenv`)
-
-## 💽 Installation
 
 1. Clone this repository:
 
@@ -119,28 +226,356 @@ The most obvious downside is that you lose the metadata associated with a netCDF
 
 That’s it!
 
+## Basic Usage
 
-### 📋 Configuration
+### Your First Preprocessing Run
+This section walks through preprocessing a single variable (temperature) with the default downscaling configuration.
 
-`nc2pt` uses [Hydra](https://hydra.cc/) for flexible configuration. The main configuration file is `conf/config.yaml`, which defines:
+#### Prerequisites
+You need:
+- NetCDF files with temperature data at two resolutions (high-res and low-res)
+- ~1-2x the size of your input data available as disk space
 
--   The list of climate models to include (`climate_models`)
-    
--   Global dimensions, coordinates, subsetting, and chunking
-    
--   Output path and compute options
-    
+#### Step-by-Step
+**1. Configure file paths** (`conf/paths.yaml`):
+```yaml
+paths:
+  hr_ref: /data/reference/hr_grid_single_timestep.nc
+  
+  hr:
+    tas: /data/high_res/temperature_*.nc
+  
+  lr:
+    tas: /data/low_res/temperature_*.nc
+```
+**2. Set your domain** (`conf/select.yaml`):
+```yaml
+select:
+  time:
+    range:
+      start: "2015-01-01"
+      end: "2017-01-01"
+    test_years: [2016]
+    validation_years: [2015]
+  
+  spatial:
+    scale_factor: 8  # LR will be 8x coarser than HR
+    x:
+      first_index: 0
+      last_index: 256
+    y:
+      first_index: 0
+      last_index: 256
+```
+**3. Enable only temperature** (`conf/climate_models/hr.yaml`):
+``` yaml
+climate_variables:
+  - ${internal.hr_tas}
+  # - ${internal.hr_pr}   # Comment out other variables
+  # - ${internal.hr_uas}
+```
+Do the same in conf/climate_models/lr.yaml.
 
-Each model and variable is defined in separate YAML files under `conf/climate_models/`, making the pipeline modular and easily extensible.
+**4. Run preprocessing**:
+```bash
+python nc2pt/preprocess.py
+```
 
-----------
+**5. Convert to PyTorch**:
+``` bash
+python nc2pt/tools/zarr_to_torch.py
+```
 
-### ➕ Adding a New Climate Model
+### Verifying Output
+
+After successful processing, check your output:
+
+``` bash
+# Check zarr files exist
+ls -lh output/*.zarr
+
+# Check PyTorch files
+find output -name "*.pt" | head -5
+
+# Count files per split
+ls output/hr/tas/train/*.pt | wc -l
+ls output/hr/tas/val/*.pt | wc -l
+ls output/hr/tas/test/*.pt | wc -l
+```
+
+## Core Concepts
+
+Now that you've run your first preprocessing, let's understand the key abstractions.
+
+### ClimateModel Objects
+A **ClimateModel** defines a preprocessing workflow for a category of data (e.g., low-resolution inputs, high-resolution targets).
+
+#### Why Separate ClimateModels?
+
+Different data sources need different preprocessing:
+
+| Model | Purpose | Key Differences|
+|---------|---------|---------|
+| `hr` | High-resolution target data | Defines the target grid, no regridding needed|
+| `lr` | Low-resolution input data | Regridded to HR grid, then coarsened back to native resolution|
+| `hr_invariant` | Time-invariant fields (topography) | No temporal processing, used as static features|
+| `lr_emulation` | Inference-time data | Uses pre-computed scaling statistics, no train/test split|
+
+#### ClimateModel Configuration
+
+Each ClimateModel is defined in `conf/climate_models/<model_name>.yaml`:
+
+```yaml
+_target_: nc2pt.climatedata.ClimateModel
+name: lr
+info: "Low-resolution input data for downscaling"
+
+alignment_pipeline:
+  - temporal_crop
+  - regrid
+  - spatial_crop
+  - coarsen
+  - user_defined_transforms
+  - data_split
+
+climate_variables:
+  - ${internal.lr_tas}
+  - ${internal.lr_pr}
+```
+The `alignment_pipeline` defines which processing steps to apply and in what order.
+
+### ClimateVariable Objects
+A **ClimateVariable** represents a single physical field (temperature, precipitation, wind) with its processing metadata. Each ClimateVariable is defined in `conf/climate_models/<model_name>/<variable_name>.yaml`.
+
+#### Key Attributes
+```yaml
+_target_: nc2pt.climatedata.ClimateVariable
+name: "tas"                              # Standard variable name
+alternative_names: ["T2", "t2m", "temp"] # Names it might have in your file
+# nc2pt will search for ANY of these names in your NetCDF files
+# Useful when working with multiple data sources with inconsistent naming
+path: ${internal.paths.hr.tas}           # File path
+is_west_negative: false                  # Longitude convention
+invariant: false                         # Time-varying or static?
+apply_standardize: true                  # Zero mean, unit variance
+apply_normalize: false                   # Min-max scaling to [0,1]
+coarsening_method: "mean"                # How to aggregate when coarsening
+transform: []                            # Custom preprocessing (see below)
+```
+
+#### Example: Unit Conversion
+Precipitation often needs conversion from kg/m²/s to mm/hr:
+``` yaml
+# conf/climate_models/hr/pr.yaml
+name: "pr"
+transform: ["x * 3600"]  # kg/m²/s → mm/hr
+apply_normalize: true    # [0,1] scaling works better for precipitation
+coarsening_method: "sum" # Preserve total precipitation when coarsening
+```
+
+### Processing Pipeline
+The preprocessing pipeline consists of configurable steps that transform your data:
+
+#### Available Pipeline Steps
+| Step | What it does | When it's applied|
+|---------|---------|---------|
+| `configure_metadata` | Standardize variable/dimension names | Always (automatic)|
+| `temporal_crop` | Slice to date range | Based on `select.yaml`|
+| `regrid` | Interpolate to target grid coordinates | Only for `lr` model|
+| `spatial_crop` | Extract spatial domain subset | Based on `select.yaml`|
+| `coarsen` | Reduce resolution by scale factor | Only for `lr` model|
+| `user_defined_transforms` | Apply unit conversions, log transforms | If specified in variable config|
+| `data_split` | Partition into train/val/test by year | Based on `select.yaml`|
+| `feature scaling` | Normalize or standardize | If enabled in variable config|
+| `write_to_zarr` | Save intermediate format | Always (automatic)|
+
+## Configuration Guide
+`nc2pt` uses [Hydra](https://hydra.cc/) for flexible hierarchical configuration. The configuration files are in `conf/`.
+
+### Essential Configuration Files
+These are the files you'll edit most often:
+#### Priority 1: Always Edit
+| File | Purpose | What to Change | 
+|------|---------|----------------|
+| `config.yaml` | Enable/disable models | Uncomment models under `climate_models:` |
+| `paths.yaml` | Point to your NetCDF files | All file paths |
+| `select.yaml` | Define domain and splits | Date range, spatial extent, test/val years |
+
+#### Priority 2: Often Edit
+| File | Purpose | What to Change | 
+|------|---------|----------------|
+| `climate_models/hr.yaml` | Configure HR model | Enable/disable variables, modify pipeline |
+| `climate_models/lr.yaml` | Configure LR model | Enable/disable variables, modify pipeline |
+| `climate_models/hr/<var>.yaml` | Variable-specific settings | Scaling method, transforms, units |
+
+#### Priority 3: Rarely Edit
+| File | Purpose | When to Edit |
+|------|---------|-------------|
+| `compute.yaml` | Dask parallelization | Memory errors, performance tuning |
+| `dims.yaml` | Dimension name mappings | Non-standard NetCDF dimension names |
+| `coords.yaml` | Coordinate name mappings | Non-standard coordinate variable names |
+
+#### Priority 4: Advanced Only
+| File | Purpose | When to Edit |
+|------|---------|-------------|
+| `injections.yaml` | Hydra dependency injection | Adding new models or variables |
+| `loader.yaml` | Training batch loader | ML training setup |
+
+### Understanding the Config Structure
+The configuration uses **Hydra's composition pattern**:
+
+``` yaml
+# config.yaml references models
+climate_models:
+  - ${internal.hr}    # References hr.yaml
+  - ${internal.lr}    # References lr.yaml
+
+# hr.yaml references variables
+climate_variables:
+  - ${internal.hr_tas}   # References hr/tas.yaml
+  - ${internal.hr_pr}    # References hr/pr.yaml
+
+# hr/tas.yaml references paths
+path: ${internal.paths.hr.tas}   # References paths.yaml
+```
+
+**Key insight:** The `${internal.*}` syntax creates references that are resolved at runtime by Hydra.
+
+## Common Workflows
+
+### Downscaling (Default)
+
+This is the pre-configured workflow. You've already run this in [Your First Preprocessing Run](#your-first-preprocessing-run).
+
+**Use case:** Training super-resolution models to downscale coarse climate model output.
+
+**What's included:**
+
+-   `lr`: Low-resolution inputs (regridded and coarsened)
+-   `hr`: High-resolution targets
+-   `hr_invariant`: Static fields like topography (optional)
+
+**Configuration:** Already set up in `conf/climate_models/`.
+
+### Model Evaluation
+**Use case:** Comparing multiple model outputs on a common grid for fair evaluation.
+
+**Scenario:** You have multiple datasets (observations, model predictions, ensemble members) that may have different resolutions, projections, or spatial extents. You need them all on a common grid with identical spatial and temporal coverage for fair comparison.
+
+**Setup:** Use the `lr` ClimateModel (which supports regridding to a reference grid).
+
+#### Configuration
+
+**1. Set your reference grid** (`conf/paths.yaml`):
+
+```yaml
+paths:
+  hr_ref: /data/reference/grid.nc  # Defines target grid for all datasets
+  ```
+
+**2. Disable scaling and data splitting**
+
+For each variable (e.g., `conf/climate_models/lr/tas.yaml`, `conf/climate_models/lr/pr.yaml`):
+
+```yaml
+apply_standardize: false  # Keep raw values for comparison
+apply_normalize: false` 
+```
+
+
+**3. Remove coarsening and data split** (`conf/climate_models/lr.yaml`):
+
+```yaml
+alignment_pipeline:
+  - temporal_crop
+  - regrid        # Aligns all datasets to hr_ref grid
+  - spatial_crop
+  - user_defined_transforms
+  # - coarsen     # REMOVE - output at target resolution
+  # - split_data  # REMOVE - no train/val/test split needed
+```
+**4. Enable all variables you want to compare** (`conf/climate_models/lr.yaml`):
+
+``` yaml
+climate_variables:
+  - ${internal.lr_tas}
+  - ${internal.lr_pr}
+  - ${internal.lr_uas}
+  # Add all variables you need to evaluate
+  ```
+**5. Process each dataset:**
+``` bash
+# Reference dataset (observations)
+# Edit conf/paths.yaml:
+#   lr.tas: /data/observations/temperature_*.nc
+#   lr.pr: /data/observations/precipitation_*.nc
+#   lr.uas: /data/observations/wind_u_*.nc
+python nc2pt/preprocess.py
+mv output/lr output/reference
+
+# Model A predictions
+# Edit conf/paths.yaml:
+#   lr.tas: /data/model_a/temperature_*.nc
+#   lr.pr: /data/model_a/precipitation_*.nc
+#   lr.uas: /data/model_a/wind_u_*.nc
+python nc2pt/preprocess.py
+mv output/lr output/model_a
+
+# Model B predictions
+# Edit conf/paths.yaml with Model B paths
+python nc2pt/preprocess.py
+mv output/lr output/model_b
+
+# Repeat for additional models...
+```
+
+#### Result
+All datasets are now:
+-   ✅ On the same grid (resolution and projection from  `hr_ref`)
+-   ✅ Same spatial extent (from  `select.yaml`  spatial crop)
+-   ✅ Same temporal coverage (from  `select.yaml`  time range)
+-   ✅ Same variables with consistent units
+-   ✅ Ready for direct comparison
+
+#### Final Directory Structure
+
+```bash
+output/
+├── reference/
+│   ├── tas/
+│   ├── pr/
+│   └── uas/
+├── model_a/
+│   ├── tas/
+│   ├── pr/
+│   └── uas/
+└── model_b/
+    ├── tas/
+    ├── pr/
+    └── uas/
+```
+
+### Custom ML Preprocessing
+
+**Use case:** You have a specific ML task that doesn't fit the downscaling template.
+
+**Example:** Bias correction with multiple predictors.
+
+**Approach:**
+
+1.  Create custom ClimateModels for each data source
+2.  Define custom  `alignment_pipeline`  for each
+3.  Use  `user_defined_transforms`  for feature engineering
+
+
+## Customization
+
+### Adding a New ClimateModel
 
 To add a new model:
 
 1.  **Create a model file**  
-    Place it at `conf/climate_models/<name>/model.yaml`. Example:
+    Place it at `conf/climate_models/<model_name>.yaml`. Example:
     
     ```yaml
     _target_:  nc2pt.climatedata.ClimateModel
@@ -185,7 +620,9 @@ To add a new model:
 
 ----------
 
-### ➕ Adding a New Climate Variable
+### Adding a New ClimateVariable
+
+First check whether the variable already exists in your ClimateModel! (Check `conf/climate_models/<model_name>.yaml`, your variable might just be commented out).
 
 To add a new variable to an existing model (e.g., `hr`):
 
@@ -223,26 +660,107 @@ To add a new variable to an existing model (e.g., `hr`):
 
 That’s it — your new model or variable will now be included in the pipeline when `preprocess.py` is run.
 
-### 🚀 Running
-1. Explore data and ensure compatibility
-2. **Set up your configuration**:
--   Edit `conf/config.yaml` to include the models you want to use under `climate_models:`   
--   For each model, go to its `model.yaml` file and uncomment (or add) the variables you want included
-3. Run the `nc2pt/preprocess.py` script which will run through your preprocessing steps. This creates the zarr files
-4. Run the `nc2pt/tools/zarr_to_torch.py` script which serializes each time step in the `.zarr` file to an individual PyTorch `.pt` file.
-5. Optional: run the `nc2pt/tools/single_files_to_batches.py` which combines individual files from the previous step into random batches. This setup allows for less io in your machine learning pipeline.
+### Customizable Pipelines
 
-### Testing
+Each ClimateModel's `alignment_pipeline` can be customized by removing or reordering steps.
 
-Testing is done with pytest. The easiest way to perform tests is to install pytest and use the command: `pytest --cov-report term-missing --cov=nc2pt .`
+#### Example 1: Skip Coarsening
 
-It will generate a coverage report and automatically use files prepended with `test_*.py` in `nc2pt/tests`
+If your LR data is already at the desired resolution:
 
+```yaml
+# conf/climate_models/lr.yaml
+alignment_pipeline:
+  - temporal_crop
+  - regrid
+  - spatial_crop
+  # - coarsen  ← REMOVED
+  - user_defined_transforms
+  - data_split
+```
 
-### 📝 Notes
+#### Example 2: No Train/Test Split
 
-- **Chunking Sensitivity**:  
-  The preprocessing pipeline is sensitive to how datasets are chunked in memory. If you encounter memory errors or Dask worker crashes, reviewing and adjusting the chunk sizes is a good first step. See [closed issue #18](https://github.com/nannau/nc2pt/issues/18) for details and suggestions.
+For inference or when doing custom cross-validation:
 
-- **Interpolation Method**:  
-  The current interpolation method uses xarray’s native 2D interpolation, which does not account for Earth curvature. This repository previously used an `xESMF`-backed interpolation scheme that performed regridding on spherical geometry. However, within the scope of this work, it was found that the difference in performance was negligible, so the dependency on `xESMF` was removed. See [closed issue #15](https://github.com/nannau/nc2pt/issues/15) for more context.
+``` yaml
+alignment_pipeline:
+  - temporal_crop
+  - regrid
+  - spatial_crop
+  - coarsen
+  - user_defined_transforms
+  # - data_split  ← REMOVED` 
+```
+
+#### Example 3: Minimal Pipeline
+
+For data that's already perfectly aligned:
+
+```yaml
+alignment_pipeline:
+  - temporal_crop
+  - user_defined_transforms
+  - data_split
+```
+
+## Advanced Topics
+
+### Memory and Chunking
+nc2pt uses Dask for parallel processing, which requires careful chunking for large datasets.
+#### Common Memory Issues
+**Symptom:** `MemoryError` or `KilledWorker` during preprocessing.
+**Solutions:**
+
+1.  **Reduce workers**  (`conf/compute.yaml`):
+```yaml
+compute:
+  n_workers: 2  # Default is 4
+```
+
+2.  **Adjust chunking**  (`conf/compute.yaml`):
+
+```yaml
+compute:
+  chunk_size:
+    time: 10    # Process 10 timesteps at a time
+    x: 128      # Spatial chunks
+   y: 128
+```
+**See also:**  [Issue #18](https://github.com/climagination/nc2pt/issues/18) for detailed discussion.
+
+### Scaling Statistics and Inference
+
+When using standardization/normalization, statistics are computed from the training set and saved:
+
+```bash
+output/
+└── feature_scaling_metadata/
+    └── hr_tas_feature_scaling_metadata.json
+```
+
+**Content:**
+
+```json
+"method": "minmax",
+"min": -22.145673751831055,
+"max": 30.749866485595703,
+```
+#### Using at Inference Time
+For the `lr_emulation` model (inference without train/test split):
+```yaml
+# conf/climate_models/lr_emulation/tas.yaml
+metadata_path: /path/to/hr_tas_feature_scaling_metadata.json
+```
+
+This applies the training set statistics to your inference data, ensuring consistent preprocessing.
+
+## Technical Notes
+
+### Interpolation Method
+
+The current implementation uses xarray's native 2D interpolation, which does not account for Earth curvature. Previous versions used xESMF for spherical regridding, but performance differences were negligible for typical regional domains. See [Issue #15](https://github.com/climagination/nc2pt/issues/15) for context.
+
+### Chunking Sensitivity
+
+Preprocessing performance is sensitive to chunk sizes. The default configuration works well for typical datasets, but large domains or high temporal resolution may require tuning. See [Issue #18](https://github.com/climagination/nc2pt/issues/18) for guidelines.
