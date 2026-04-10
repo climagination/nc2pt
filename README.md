@@ -149,15 +149,15 @@ print(data.shape)  # (1, height, width)
 **"Memory Error" or "Worker crashed"**
 
 -   Reduce  `n_workers`  in  `conf/compute.yaml`  (try  `n_workers: 2`)
--   See  [Troubleshooting](https://radia.vrd-drv.crc.ca/c/756366a7-c792-431f-8a12-b3b13e5e5bca#troubleshooting)  for chunking guidance
+-   See  [Memory and Chunking](#memory-and-chunking)  for chunking guidance
 
 **"Variable 'tas' not found"**
 -   Check your NetCDF variable names with  `ncdump -h yourfile.nc`
 -   Add them to  `alternative_names`  in  `conf/climate_models/hr/tas.yaml`
 
 ### 🎯 Next Steps
--   **Add more variables**: See  [Adding Climate Variables](https://radia.vrd-drv.crc.ca/c/756366a7-c792-431f-8a12-b3b13e5e5bca#adding-a-new-climate-variable)
--   **Customize preprocessing**: Learn about  [ClimateModel pipelines](https://radia.vrd-drv.crc.ca/c/756366a7-c792-431f-8a12-b3b13e5e5bca#customizable-pipelines)
+-   **Add more variables**: See  [Adding Climate Variables](#adding-a-new-climatevariable)
+-   **Customize preprocessing**: Learn about  [ClimateModel pipelines](#customizable-pipelines)
 -   **Train a model**: Check out our  [GAN for downscaling](https://github.com/climagination/ClimatExML)
 
 ## What is nc2pt?
@@ -438,7 +438,7 @@ path: ${internal.paths.hr.tas}   # References paths.yaml
 
 ### Downscaling (Default)
 
-This is the pre-configured workflow. You've already run this in [Your First Preprocessing Run](https://radia.vrd-drv.crc.ca/c/756366a7-c792-431f-8a12-b3b13e5e5bca#your-first-preprocessing-run).
+This is the pre-configured workflow. You've already run this in [Your First Preprocessing Run](#your-first-preprocessing-run).
 
 **Use case:** Training super-resolution models to downscale coarse climate model output.
 
@@ -614,6 +614,8 @@ To add a new model:
 ----------
 
 ### Adding a New ClimateVariable
+
+First check whether the variable already exists in your ClimateModel! (Check `conf/climate_models/<model_name>.yaml`, your variable might just be commented out).
 
 To add a new variable to an existing model (e.g., `hr`):
 
