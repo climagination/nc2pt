@@ -225,7 +225,7 @@ transform: []  # No unit conversion needed
     
    ``` yaml
     paths:
-      hr_ref: /path/to/your/hr_reference_grid.nc
+      hr_ref: /path/to/your/hr_reference_grid.nc # Used for regridding LR fields, hr grid file with single timestep (I use invariant fields)
       
       hr:
         uas: /path/to/your/hr_wind_u_*.nc
@@ -276,7 +276,7 @@ transform: []  # No unit conversion needed
     output_path: /path/to/output/directory
 ```
 
-5.  **Run preprocessing** (see [Running](https://))
+5.  **Run preprocessing** (see [Running](https://github.com/climagination/nc2pt/tree/documentation_update?tab=readme-ov-file#-running))
 
 ----------
 
@@ -373,15 +373,17 @@ That’s it — your new model or variable will now be included in the pipeline 
 2. **Set up your configuration**:
 -   Edit `conf/config.yaml` to include the models you want to use under `climate_models:`   
 -   For each model, go to its `model.yaml` file and uncomment (or add) the variables you want included
-3. Run the `nc2pt/preprocess.py` script which will run through your preprocessing steps. This creates the zarr files
-4. Run the `nc2pt/tools/zarr_to_torch.py` script which serializes each time step in the `.zarr` file to an individual PyTorch `.pt` file.
-5. Optional: run the `nc2pt/tools/single_files_to_batches.py` which combines individual files from the previous step into random batches. This setup allows for less io in your machine learning pipeline.
+3. Activate your virtual environment (if you used one)
+4. Run the `nc2pt/preprocess.py` script which will run through your preprocessing steps. This creates the zarr files
+5. Run the `nc2pt/tools/zarr_to_torch.py` script which serializes each time step in the `.zarr` file to an individual PyTorch `.pt` file.
+6. Optional: run the `nc2pt/tools/single_files_to_batches.py` which combines individual files from the previous step into random batches. This setup allows for less io in your machine learning pipeline.
 
 ### Testing
 
 Testing is done with pytest. The easiest way to perform tests is to install pytest and use the command: `pytest --cov-report term-missing --cov=nc2pt .`
-
 It will generate a coverage report and automatically use files prepended with `test_*.py` in `nc2pt/tests`
+
+**Note: Hehe, need to update the tests. Currently not working.
 
 
 ### 📝 Notes
