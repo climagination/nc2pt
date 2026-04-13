@@ -123,6 +123,11 @@ python nc2pt/tools/zarr_to_torch.py
 
 ```bash
 output/
+├── grid/
+│   └── hr_target_grid.nc          # Lat/lon coordinates of your training domain
+├── feature_scaling_metadata/      # Stats used to standardize/normalize data
+│	├── lr_tas_feature_scaling_metadata.json 
+│   └── hr_tas_feature_scaling_metadata.json
 ├── test/
 │   └── tas/
 │       ├── hr/
@@ -840,6 +845,26 @@ metadata_path: /path/to/hr_tas_feature_scaling_metadata.json
 ```
 
 This applies the training set statistics to your inference data, ensuring consistent preprocessing.
+
+### Target Grid Metadata
+**Why you need this**: After training a downscaling model, you need to restore the original geospatial coordinates (lat/lon) to your model predictions for visualization and analysis.
+
+**What gets saved**: During preprocessing, nc2pt saves the target grid definition that was used to align all your data:` 
+
+```bash
+output/ 
+├── grid/
+│ └── hr_target_grid.nc # Lat/lon coordinates of your training domain
+└── feature_scaling_metadata/
+└── lr_tas_feature_scaling_metadata.json # References ../grid/hr_target_grid.nc
+```
+
+ **Grid contents**:
+- **Coordinates**: `lat`, `lon`, `rlat`, `rlon` arrays matching your cropped domain
+- **Metadata**: Spatial crop indices, creation date, model name
+- **Purpose**: Reattach to model predictions during inference
+
+**When it's created**: Automatically saved when a model has an `hr_ref` field defined (currently only `lr` model).
 
 ## Technical Notes
 
