@@ -38,6 +38,7 @@
   - [Adding Models](#adding-a-new-climatemodel)
   - [Adding Variables](#adding-a-new-climatevariable)
   - [Customizing Processing Pipelines](#customizable-pipelines)
+  - [Custom Data Loaders](#custom-data-loaders)
 - [Advanced Topics](#advanced-topics)
   - [Memory and Chunking](#memory-and-chunking)
   - [Scaling Statistics and Inference](#scaling-statistics-and-inference)
@@ -329,6 +330,7 @@ Each ClimateModel is defined in `conf/climate_models/<model_name>.yaml`:
 _target_: nc2pt.climatedata.ClimateModel
 name: lr
 info: "Low-resolution input data for downscaling"
+loader: "default"  # Options: "default", "ubc_wrf", or custom
 
 alignment_pipeline:
   - temporal_crop
@@ -342,7 +344,12 @@ climate_variables:
   - ${internal.lr_tas}
   - ${internal.lr_pr}
 ```
-The `alignment_pipeline` defines which processing steps to apply and in what order.
+
+**Key Configuration Fields:**
+
+-   `loader`: Data loading backend (`"default"`  or custom like  `"ubc_wrf"`)
+-   `alignment_pipeline`: Processing steps (see Pipeline Steps)
+-   `climate_variables`: List of variables to process
 
 ### ClimateVariable Objects
 A **ClimateVariable** represents a single physical field (temperature, precipitation, wind) with its processing metadata. Each ClimateVariable is defined in `conf/climate_models/<model_name>/<variable_name>.yaml`.
@@ -703,6 +710,85 @@ alignment_pipeline:
   - user_defined_transforms
   - data_split
 ```
+
+### Custom Data Loaders
+
+By default, nc2pt uses `xarray.open_mfdataset()` to load NetCDF files. For datasets with special requirements (non-standard time encoding, file naming conventions, validation needs), you can implement a custom loader.
+
+#### When You Need a Custom Loader
+
+✅ Use a custom loader when:
+
+-   Time coordinates are encoded in filenames rather than CF-compliant metadata
+-   Files require validation/filtering before loading (e.g., corrupted files in a directory)
+-   Special preprocessing is needed before concatenation (e.g., dropping extra timesteps)
+-   Non-standard dimension names that vary between files
+
+#### Example: ClimatEx (UBC) WRF Dataset
+
+The ClimatEx WRF dataset requires special handling for time coordinates and file validation. See `nc2pt/ubc_wrf_io.py` for the implementation.
+
+**Usage:**
+
+1.  **Configure your ClimateModel**  to use the custom loader:
+
+``` yaml
+# conf/climate_models/lr.yaml
+_target_: nc2pt.climatedata.ClimateModel
+name: lr
+info: "UBC WRF low-resolution input"
+loader: "ubc_wrf"  # ← Specify custom loader
+
+alignment_pipeline:
+  - temporal_crop
+  - regrid
+  - spatial_crop
+  - coarsen
+  - user_defined_transforms
+  - data_split
+
+climate_variables:
+  - ${internal.lr_tas}
+  - ${internal.lr_pr}` 
+```
+
+2.  **Point to your WRF files**  in  `conf/paths.yaml`:
+
+```yaml
+paths:
+  lr:
+    tas: /data/wrf/metgrid_*_*.nc  # Glob pattern for monthly files
+    pr: /data/wrf/precip_*_*.nc`
+ ```
+
+#### Creating Your Own Loader
+
+To implement a custom loader for your dataset:
+
+1.  **Create a new loader file**:  `nc2pt/my_dataset_io.py`
+2.  **Implement a  `load_<dataset>()`  function**  that returns an  `xr.Dataset`
+3.  **Register it in  `nc2pt/io.py`**:
+    
+ ``` python
+    if loader == "my_dataset":
+        from my_dataset_io import load_my_dataset
+        return load_my_dataset(path, engine=engine, chunks=chunks)
+ ```
+    
+4.  **Use it in your ClimateModel config**:
+    
+```yaml
+    loader: "my_dataset"
+```
+
+
+**Loader requirements:**
+
+-   Must return an  `xr.Dataset`  with proper coordinate dimensions
+-   Should handle both single files and multi-file patterns
+-   Must be compatible with dask chunking for large datasets
+
+**Reference implementation:** See `nc2pt/ubc_wrf_io.py` for a complete example.
 
 ## Advanced Topics
 
