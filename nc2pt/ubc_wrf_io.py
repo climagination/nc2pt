@@ -50,10 +50,14 @@ def add_ubc_wrf_timesteps(ds):
         year, month = match.groups()
         start_date = f"{year}-{month}-01"
 
-        # rename 'time' to 'Times' in precip files
-        ds = ds.rename({'time': 'Times'})
+        if 'time' in ds:
+            # rename 'time' to 'Times' in precip files
+            ds = ds.rename({'time': 'Times'})
+        elif 'XTIME' in ds:
+            # rename 'TIMEX' to 'Times' in invariant fields
+            ds = ds.rename({'XTIME': 'Times'})
         
-        # If there are days*hours+1 timesteps drop last timestep (spin-up for next month)
+        # If there are days*hours+1 timesteps drop last timestep
         if len(ds.Times)%24 == 1:
             ds = ds.isel(Times=slice(None, -1))
         
@@ -82,10 +86,6 @@ def load_ubc_wrf(path: str, engine: str = "h5netcdf", chunks: dict = None) -> xr
         else:
             file_list = path
         
-        # Filter for only COMPRESSED_SUBSETTED files
-        # file_list = [f for f in file_list if 'COMPRESSED_SUBSETTED_d03' in f]
-        # print(f"Filtered to {len(file_list)} COMPRESSED_SUBSETTED files")
-        
         # Validate files
         print("Validating files...")
         valid_files = [f for f in file_list if validate_file(f, engine)]
@@ -94,7 +94,7 @@ def load_ubc_wrf(path: str, engine: str = "h5netcdf", chunks: dict = None) -> xr
             print(f"⚠️  Skipped {len(file_list) - len(valid_files)} corrupted files")
         
         print(f"✅ Processing {len(valid_files)} valid files")
-        print("Note: Dropping last timestep of each month (corresponds to M+1 00:00:00)")
+        print("Note: Dropping last timestep of each month (corresponds to M+1 00:00:00) if extra timestep detected")
         
         ds = xr.open_mfdataset(
             paths=valid_files,

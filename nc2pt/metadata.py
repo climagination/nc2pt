@@ -420,7 +420,9 @@ def configure_metadata(
     ds = rename_keys(ds, outcome_obj=var, ds_attr="data_vars")
     preserve = [dim.name for dim in climdata.dims] + [coord.name for coord in climdata.coords]
     ds = drop_unused_variables(ds, var, preserve_vars=preserve)
-    ds = match_longitudes(ds) if var.is_west_negative else ds
+
+    #ensures lat/lon are always in [-180,180] range
+    ds = normalize_longitudes_to_180(ds)
 
     return ds
 
@@ -474,25 +476,25 @@ def rename_keys(
     return ds
 
 
-def match_longitudes(ds: xr.Dataset) -> xr.Dataset:
-    """Match the longitudes of the dataset to the range [-180, 180].
+def normalize_longitudes_to_180(ds: xr.Dataset) -> xr.Dataset:
+    """Convert longitudes from [0, 360] to [-180, 180] range.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        Dataset to match the longitudes of.
+        Dataset with longitudes in range [0, 360].
 
     Returns
     -------
     ds : xarray.Dataset
-        Dataset with longitudes in the range [-180, 180].
-    """
-    if ds.lon.min() > 0:
+        Da
+    if ds.lon.max() > 180:
         raise ValueError(
-            "Dataset longitudes are likely not in the range [-180, 180]"
+            "Dataset longitudes are likely not in the range [0, 360]"
             "which is the intention of this function. Check longitude units."
         )
-    ds = ds.assign_coords(lon=(ds.lon + 360))
+    ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180))
+    ds = ds.sortby('lon')
     return ds
 
 
