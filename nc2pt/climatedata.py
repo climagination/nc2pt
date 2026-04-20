@@ -19,7 +19,6 @@ class ClimateVariable:
     name: str
     alternative_names: List[str]
     path: str
-    is_west_negative: bool
     transform: Optional[str] = field(default=None)
     invariant: Optional[bool] = field(default=False)
     apply_standardize: Optional[bool] = field(default=True)
@@ -96,7 +95,6 @@ class FeatureScalingMetadata:
     apply_normalize: bool = False
     apply_standardize: bool = False
     transforms: List = False
-    is_west_negative: bool = False
     spatial_scale_factor: int = 1
     spatial_crop: Optional[dict] = None
     hr_reference_field: Optional[str] = None

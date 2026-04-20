@@ -334,7 +334,6 @@ class NormalizerMetadataCollector:
             "apply_normalize": climate_variable.apply_normalize,
             "apply_standardize": climate_variable.apply_standardize,
             "transforms": climate_variable.transform or [],
-            "is_west_negative": climate_variable.is_west_negative,
             "spatial_scale_factor": climate_data.select["spatial"]["scale_factor"],
             "spatial_crop": self._get_spatial_crop(climate_data),
             "hr_reference_field": self._get_hr_ref_path(climate_data, model_name),
@@ -477,24 +476,13 @@ def rename_keys(
 
 
 def normalize_longitudes_to_180(ds: xr.Dataset) -> xr.Dataset:
-    """Convert longitudes from [0, 360] to [-180, 180] range.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        Dataset with longitudes in range [0, 360].
-
-    Returns
-    -------
-    ds : xarray.Dataset
-        Da
-    if ds.lon.max() > 180:
-        raise ValueError(
-            "Dataset longitudes are likely not in the range [0, 360]"
-            "which is the intention of this function. Check longitude units."
-        )
-    ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180))
-    ds = ds.sortby('lon')
+    """Convert longitudes to [-180, 180] range.
+    
+    Safe to call on any longitude range. Idempotent.
+    """
+    if ds.lon.max() > 180:  # Only if needed (optimization)
+        ds = ds.assign_coords(lon=(((ds.lon + 180) % 360) - 180))
+        ds = ds.sortby('lon')
     return ds
 
 

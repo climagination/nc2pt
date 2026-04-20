@@ -10,6 +10,6 @@ alignment_pipeline: ['spatial_crop', 'coarsen']
 
 climate_variables:
   - ${internal.hr_invariant_topo}
-  - ${internal.hr_invariant_land_mask}
-  - ${internal.hr_invariant_land_use}
-  - ${internal.hr_invariant_surface_roughness}
+  #- ${internal.hr_invariant_land_mask}
+  #- ${internal.hr_invariant_land_use}
+  #- ${internal.hr_invariant_surface_roughness}

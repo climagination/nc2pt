@@ -5,7 +5,6 @@ name: uas
 alternative_names: ["uas", "U10", "u10"]
 path: ${internal.paths.my_model.uas}
 
-is_west_negative: true
 invariant: false
 apply_standardize: false
 apply_normalize: true

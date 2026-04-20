@@ -15,7 +15,6 @@ hr_ref:
   name: "hr_ref"
   alternative_names: ["T2"]
   path: ${internal.paths.hr_ref}
-  is_west_negative: true
   invariant: true
 
 climate_variables:
