@@ -1,4 +1,4 @@
-"""UBC WRF-specific data loading utilities."""
+"""Climatex WRF-specific data loading utilities."""
 
 import xarray as xr
 import pandas as pd
@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 
-def get_ubc_wrf_file_list(pattern: str) -> list:
+def get_climatex_wrf_file_list(pattern: str) -> list:
     """Get file list"""
     import glob
 
@@ -34,7 +34,7 @@ def validate_file(filepath, engine='h5netcdf'):
         return False
 
 
-def add_ubc_wrf_timesteps(ds):
+def add_climatex_wrf_timesteps(ds):
     """
     Preprocess WRF metgrid files with dummy Time coordinate.
     Extracts date from filename and creates proper time axis.
@@ -73,7 +73,7 @@ def add_ubc_wrf_timesteps(ds):
     return ds
 
 
-def load_ubc_wrf(path: str, engine: str = "h5netcdf", chunks: dict = None) -> xr.Dataset:
+def load_climatex_wrf(path: str, engine: str = "h5netcdf", chunks: dict = None) -> xr.Dataset:
     """Load WRF metgrid files with proper time coordinate handling."""
     
     # Use provided chunks or default to auto
@@ -82,7 +82,7 @@ def load_ubc_wrf(path: str, engine: str = "h5netcdf", chunks: dict = None) -> xr
     
     if "*" in path or isinstance(path, list):
         if isinstance(path, str):
-            file_list = get_ubc_wrf_file_list(path)
+            file_list = get_climatex_wrf_file_list(path)
         else:
             file_list = path
         
@@ -101,7 +101,7 @@ def load_ubc_wrf(path: str, engine: str = "h5netcdf", chunks: dict = None) -> xr
             engine=engine,
             parallel=True,
             chunks='auto',
-            preprocess=add_ubc_wrf_timesteps,
+            preprocess=add_climatex_wrf_timesteps,
             combine='nested',
             concat_dim='Times',
             combine_attrs='override',
@@ -112,4 +112,4 @@ def load_ubc_wrf(path: str, engine: str = "h5netcdf", chunks: dict = None) -> xr
         return ds
     else:
         ds = xr.open_dataset(path, engine=engine, chunks=chunks)
-        return add_ubc_wrf_timesteps(ds)
+        return add_climatex_wrf_timesteps(ds)
