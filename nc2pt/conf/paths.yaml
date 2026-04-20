@@ -7,7 +7,7 @@ paths:
   # ────────────────────────────────────────
   # User-dependent path for HR reference grid
   # ────────────────────────────────────────
-  hr_ref: /net/venus/kenes/data/sbeairsto/UBC_WRF/ubc_wrf_staticfields_d03.nc # UBC_WRF reference grid (should be accessible to everyone)
+  hr_ref: /net/venus/kenes/data/sbeairsto/UBC_WRF/ubc_wrf_staticfields_d03.nc # ClimatEx_WRF reference grid (should be accessible to everyone)
 
   # ────────────────────────────────────────
   # Shared data paths – High-Resolution WRF (HR)
@@ -32,7 +32,7 @@ paths:
   # ────────────────────────────────────────
   # Shared invariant fields (e.g., orography, landmask)
   # ────────────────────────────────────────
-  hr_invariant: /net/venus/kenes/data/sbeairsto/UBC_WRF/ubc_wrf_staticfields_d03.nc # UBC_WRF static fields (should be accessible to everyone)
+  hr_invariant: /net/venus/kenes/data/sbeairsto/UBC_WRF/ubc_wrf_staticfields_d03.nc # ClimatEx_WRF static fields (should be accessible to everyone)
 
   # ────────────────────────────────────────
   # User-dependent path for – Low-Resolution ERA5 Emulation Metadata (LR Emulation) 

@@ -17,16 +17,16 @@ def load_grid(path: str, engine: str = "netcdf4", loader: str = "default", chunk
     chunks : int
         Chunk size for dask.
     loader : str
-        Loader type: 'default', 'ubc_wrf'
+        Loader type: 'default', 'climatex_wrf'
 
     Returns
     -------
     grid : xarray.Dataset
         Grid to regrid to.
     """
-    if loader == "ubc_wrf":
-        from ubc_wrf_io import load_ubc_wrf
-        return load_ubc_wrf(path, engine=engine, chunks=chunks)
+    if loader == "climatex_wrf":
+        from climatex_wrf_io import load_climatex_wrf
+        return load_climatex_wrf(path, engine=engine, chunks=chunks)
 
     # Default loader
     if "*" in path or isinstance(path, list):

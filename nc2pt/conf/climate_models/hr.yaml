@@ -4,9 +4,9 @@
 
 _target_: nc2pt.climatedata.ClimateModel
 name: hr
-info: "High Resolution UBC WRF, Western Canada"
+info: "High Resolution ClimatEx WRF, Western Canada"
 alignment_pipeline: ["temporal_crop", "spatial_crop", "user_defined_transforms", "split_data"]
-loader: "ubc_wrf"
+loader: "climatex_wrf"
 
 climate_variables:
   #- ${internal.hr_uas}
