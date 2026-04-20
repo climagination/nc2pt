@@ -14,13 +14,12 @@ hr_ref:
   name: "hr_ref"
   alternative_names: ["HGT"]
   path: ${internal.paths.hr_ref}
-  is_west_negative: true
   invariant: true
 
 climate_variables:
   # Activate variables to include in the LR model
   # - ${internal.lr_uas}
   # - ${internal.lr_vas}
-  # - ${internal.lr_tas}
+   - ${internal.lr_tas}
   # - ${internal.lr_ps}
-   - ${internal.lr_pr}
+  # - ${internal.lr_pr}

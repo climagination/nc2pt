@@ -23,7 +23,7 @@ output_path: /home/username/output/path
 climate_models:
   - ${internal.hr}
   - ${internal.lr}
-  #- ${internal.lr_invariant}
+  - ${internal.lr_invariant}
   - ${internal.hr_invariant}
   #- ${internal.lr_emulation}
   #- ${internal.my_model}

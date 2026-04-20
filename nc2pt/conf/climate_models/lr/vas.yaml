@@ -4,7 +4,6 @@ _target_: nc2pt.climatedata.ClimateVariable
 name: "vas"
 alternative_names: ["V10", "v10", "vas"]
 path: ${internal.paths.lr.vas}
-is_west_negative: false
 apply_standardize: false
 apply_normalize: true
 invariant: false

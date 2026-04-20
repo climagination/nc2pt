@@ -4,7 +4,6 @@ _target_: nc2pt.climatedata.ClimateVariable
 name: "tas"
 alternative_names: ["T2", "surface temperature"]
 path: ${internal.paths.lr.tas}
-is_west_negative: true
 apply_standardize: false
 apply_normalize: true
 invariant: false
