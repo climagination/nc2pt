@@ -335,7 +335,7 @@ Each ClimateModel is defined in `conf/climate_models/<model_name>.yaml`:
 _target_: nc2pt.climatedata.ClimateModel
 name: lr
 info: "Low-resolution input data for downscaling"
-loader: "default"  # Options: "default", "ubc_wrf", or custom
+loader: "default"  # Options: "default", "climatex_wrf", or custom
 
 alignment_pipeline:
   - temporal_crop
@@ -352,7 +352,7 @@ climate_variables:
 
 **Key Configuration Fields:**
 
--   `loader`: Data loading backend (`"default"`  or custom like  `"ubc_wrf"`)
+-   `loader`: Data loading backend (`"default"`  or custom like  `"climatex_wrf"`)
 -   `alignment_pipeline`: Processing steps (see Pipeline Steps)
 -   `climate_variables`: List of variables to process
 
@@ -731,7 +731,7 @@ By default, nc2pt uses `xarray.open_mfdataset()` to load NetCDF files. For datas
 
 #### Example: ClimatEx (UBC) WRF Dataset
 
-The ClimatEx WRF dataset requires special handling for time coordinates and file validation. See `nc2pt/ubc_wrf_io.py` for the implementation.
+The ClimatEx WRF dataset requires special handling for time coordinates and file validation. See `nc2pt/climatex_wrf_io.py` for the implementation.
 
 **Usage:**
 
@@ -741,8 +741,8 @@ The ClimatEx WRF dataset requires special handling for time coordinates and file
 # conf/climate_models/lr.yaml
 _target_: nc2pt.climatedata.ClimateModel
 name: lr
-info: "UBC WRF low-resolution input"
-loader: "ubc_wrf"  # ← Specify custom loader
+info: "ClimatEx WRF low-resolution input"
+loader: "climatex_wrf"  # ← Specify custom loader
 
 alignment_pipeline:
   - temporal_crop
@@ -793,7 +793,7 @@ To implement a custom loader for your dataset:
 -   Should handle both single files and multi-file patterns
 -   Must be compatible with dask chunking for large datasets
 
-**Reference implementation:** See `nc2pt/ubc_wrf_io.py` for a complete example.
+**Reference implementation:** See `nc2pt/climatex_wrf_io.py` for a complete example.
 
 ## Advanced Topics
 
