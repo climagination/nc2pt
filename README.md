@@ -65,7 +65,7 @@ pip install -e .
 Edit `conf/config.yaml` with desired output directory:
 
 ```yaml
-	output_path: /home/username/output/path
+output_path: /home/username/output/path
 ```
 
 ### 3. Point to Your Data
