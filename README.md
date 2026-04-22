@@ -49,7 +49,7 @@
 
 ## Quick Start
 
-Get your first NetCDF → PyTorch conversion running in 5 minutes:
+Get your first NetCDF → PyTorch conversion running in 5 minutes (configured to prepare temperature (tas) data):
 
 ### 1. Install
 ```bash
@@ -61,7 +61,14 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-### 2. Point to Your Data
+### 2. Provide output directory
+Edit `conf/config.yaml` with desired output directory:
+
+```yaml
+	output_path: /home/username/output/path
+```
+
+### 3. Point to Your Data
 Edit `conf/paths.yaml` with paths to your NetCDF files:
 
 ```yaml
@@ -77,7 +84,7 @@ paths:
     tas: /path/to/low_res_temperature*.nc
 ```
 
-### 3. Configure Your Domain
+### 4. Configure Your Domain
 
 Edit `conf/select.yaml` to set your spatial/temporal extent and test/train/validation split:
 
@@ -103,7 +110,7 @@ select:
       last_index: 128
   ```
 
-### 4. Run Preprocessing
+### 5. Run Preprocessing
 
 ``` bash
 python nc2pt/preprocess.py
@@ -112,7 +119,7 @@ python nc2pt/preprocess.py
 
 This creates `.zarr` files in your output directory (default: `output/`).
 
-### 5. Convert to PyTorch
+### 6. Convert to PyTorch
 ```bash
 python nc2pt/tools/zarr_to_torch.py
 ```
